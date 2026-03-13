@@ -4,6 +4,7 @@ clients/*.json
 
 # Auth / secrets
 data/users.json
+data/post_log.db
 secrets.json
 .env
 *.env

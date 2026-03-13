@@ -996,6 +996,7 @@
     <button class="nav-tab" onclick="switchTab('videos', this)">Videos</button>
     <button class="nav-tab" onclick="switchTab('clients', this)">Clients</button>
     <button class="nav-tab" onclick="switchTab('postiz', this)">Postiz</button>
+    <button class="nav-tab" id="nav-tab-postlog" onclick="switchTab('postlog', this)">Post Log</button>
     <button class="nav-tab admin-only" id="tab-users" onclick="switchTab('users', this)" style="display:none">Users</button>
   </nav>
   <div class="header-right">
@@ -1387,6 +1388,39 @@
     </div>
   </div>
 
+  <!-- POST LOG TAB -->
+  <div id="tab-postlog" class="tab-panel">
+    <div style="padding:0;max-width:1200px;margin:0 auto;">
+
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+        <h2 style="font-size:18px;font-weight:700;flex:1;">Post Log <span id="postlog-failed-badge" style="display:none;background:rgba(239,68,68,0.15);color:var(--red);font-size:12px;padding:2px 10px;border-radius:20px;font-weight:600;margin-left:8px;"></span></h2>
+        <select id="postlog-client-filter" onchange="loadPostLog()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:13px;">
+          <option value="">All Clients</option>
+          <option value="mic-mann">mic-mann</option>
+          <option value="mann-made">mann-made</option>
+          <option value="the-exponentials">the-exponentials</option>
+        </select>
+        <button class="btn btn-ghost" style="font-size:12px;" onclick="loadPostLog()">Refresh</button>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 2.5fr 1fr 1.4fr 1.6fr auto;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;">
+          <span>Client</span>
+          <span>Platform</span>
+          <span>Content</span>
+          <span>Status</span>
+          <span>Created</span>
+          <span>Error</span>
+          <span>Action</span>
+        </div>
+        <div id="postlog-list">
+          <div class="empty-state"><p>Loading post log...</p></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- USERS TAB (admin only) -->
   <div id="tab-users" class="tab-panel">
     <div style="padding:24px;max-width:900px;margin:0 auto;">
@@ -1595,6 +1629,16 @@ async function init() {
   renderCalendar();
   renderPostsList();
   renderAccountsGrid();
+  // Silently check for failed posts to update nav tab label
+  try {
+    const fres = await fetch('/api/posts/failed', { credentials: 'include' });
+    if (fres.ok) {
+      const fdata = await fres.json();
+      const fc = (fdata.posts || []).length;
+      const navTab = document.getElementById('nav-tab-postlog');
+      if (navTab && fc > 0) navTab.textContent = `Post Log (${fc})`;
+    }
+  } catch (_) {}
 }
 
 init();
@@ -1684,6 +1728,7 @@ function switchTab(tab, btn) {
   if (tab === 'videos') onVideoTabSwitch();
   if (tab === 'postiz') refreshPostizTab();
   if (tab === 'users') loadUsers();
+  if (tab === 'postlog') { loadPostLog(); startPostLogAutoRefresh(); } else { stopPostLogAutoRefresh(); }
 }
 
 // ===== API CALLS =====
@@ -2813,6 +2858,111 @@ function showSheetResult(msg, ok) {
   el.style.display = 'block';
   el.style.color = ok ? 'var(--green)' : 'var(--red)';
   el.textContent = msg;
+}
+
+// ===== POST LOG TAB =====
+
+let postLogRefreshTimer = null;
+
+async function loadPostLog() {
+  const clientFilter = document.getElementById('postlog-client-filter')?.value || '';
+  const list = document.getElementById('postlog-list');
+  const badge = document.getElementById('postlog-failed-badge');
+  if (!list) return;
+
+  try {
+    const url = '/api/posts/log' + (clientFilter ? `?client_id=${encodeURIComponent(clientFilter)}` : '');
+    const res = await fetch(url, { credentials: 'include' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const posts = data.posts || [];
+
+    const failedCount = posts.filter(p => p.status === 'failed' || p.status === 'retrying').length;
+    if (badge) {
+      if (failedCount > 0) {
+        badge.textContent = `${failedCount} failed`;
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    // Also update nav tab label
+    const navTab = document.getElementById('nav-tab-postlog');
+    if (navTab) {
+      navTab.textContent = failedCount > 0 ? `Post Log (${failedCount})` : 'Post Log';
+    }
+
+    if (!posts.length) {
+      list.innerHTML = '<div class="empty-state"><p>No posts logged yet.</p></div>';
+      return;
+    }
+
+    list.innerHTML = posts.map(p => {
+      const statusClass = {
+        posted: 'badge-posted',
+        queued: 'badge-scheduled',
+        retrying: 'badge-scheduled',
+        failed: 'badge-failed',
+        pending: 'badge-draft',
+      }[p.status] || 'badge-draft';
+
+      const statusStyle = p.status === 'retrying'
+        ? 'background:rgba(245,158,11,0.15);color:#f59e0b'
+        : '';
+
+      const contentPreview = (p.content || '').substring(0, 50) + ((p.content || '').length > 50 ? '...' : '');
+      const errorText = p.error ? (p.error.substring(0, 80) + (p.error.length > 80 ? '...' : '')) : '';
+      const createdAt = p.created_at ? p.created_at.replace('T', ' ').substring(0, 16) : '';
+
+      const canRetry = p.status === 'failed' || p.status === 'retrying';
+      const retryBtn = canRetry
+        ? `<button class="btn btn-sm btn-post-now" onclick="retryPost(${p.id}, this)">Retry</button>`
+        : '';
+
+      return `<div style="display:grid;grid-template-columns:1fr 1fr 2.5fr 1fr 1.4fr 1.6fr auto;gap:10px;padding:11px 16px;border-bottom:1px solid var(--border);align-items:center;font-size:12px;transition:background 0.1s;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+        <span style="color:var(--text);font-weight:500;">${escapeHtml(p.client_id || '')}</span>
+        <span style="color:var(--text-dim);text-transform:capitalize;">${escapeHtml(p.platform || '')}</span>
+        <span style="color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(p.content || '')}">${escapeHtml(contentPreview)}</span>
+        <span><span class="badge ${statusClass}" style="${statusStyle}">${p.status || 'pending'}</span></span>
+        <span style="color:var(--text-dim);">${createdAt}</span>
+        <span style="color:var(--red);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(p.error || '')}">${escapeHtml(errorText)}</span>
+        <div style="display:flex;gap:4px;">${retryBtn}</div>
+      </div>`;
+    }).join('');
+
+  } catch (e) {
+    list.innerHTML = `<div class="empty-state"><p style="color:var(--red)">Failed to load post log: ${e.message}</p></div>`;
+  }
+}
+
+async function retryPost(logId, btn) {
+  if (btn) { btn.textContent = 'Retrying...'; btn.disabled = true; }
+  try {
+    const res = await fetch(`/api/posts/retry/${logId}`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast('Post queued for retry', 'success');
+    } else {
+      showToast(data.error || 'Retry scheduled', 'success');
+    }
+    await loadPostLog();
+  } catch (e) {
+    showToast('Retry failed: ' + e.message, 'error');
+    if (btn) { btn.textContent = 'Retry'; btn.disabled = false; }
+  }
+}
+
+function startPostLogAutoRefresh() {
+  if (postLogRefreshTimer) clearInterval(postLogRefreshTimer);
+  postLogRefreshTimer = setInterval(loadPostLog, 30000);
+}
+
+function stopPostLogAutoRefresh() {
+  if (postLogRefreshTimer) { clearInterval(postLogRefreshTimer); postLogRefreshTimer = null; }
 }
 
 // Initialize sheet setup when DOM is ready

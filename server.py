@@ -1194,6 +1194,40 @@ async def sheet_template():
     }
 
 
+# ===== POST LOG ENDPOINTS =====
+
+@app.get("/api/posts/log")
+async def post_log(client_id: str = "", limit: int = 100):
+    from publisher import get_post_log
+    return {"posts": get_post_log(client_id, limit)}
+
+
+@app.get("/api/posts/failed")
+async def failed_posts(client_id: str = ""):
+    from publisher import get_failed_posts
+    return {"posts": get_failed_posts(client_id)}
+
+
+@app.post("/api/posts/retry/{log_id}")
+async def retry_post(log_id: int):
+    """Manually trigger retry of a failed post."""
+    from publisher import get_db, publish, PostStatus
+    db = get_db()
+    row = db.execute("SELECT * FROM post_log WHERE id=?", (log_id,)).fetchone()
+    if not row:
+        raise HTTPException(404, "Post not found")
+    row = dict(row)
+    api_key = os.environ.get("POSTIZ_API_KEY", "")
+    result = await publish(
+        client_id=row["client_id"],
+        platform=row["platform"],
+        content=row["content"],
+        media_path=row.get("media_path", ""),
+        api_key=api_key
+    )
+    return result
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=7070)
 
