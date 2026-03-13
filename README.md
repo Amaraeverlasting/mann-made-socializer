@@ -4,96 +4,98 @@ A social media management platform for Mann Made Media. Schedule posts, manage c
 
 ## Features
 
-- Multi-client management with per-client content queues
-- AI content generation (via Claude Haiku)
-- Post scheduling with calendar view
-- Video upload and queuing
-- Postiz integration for post delivery
-- Google Sheets queue pipeline
-- Role-based access control (admin / editor / viewer)
-- Cloudflare Tunnel for external access
+- Multi-client social media management
+- Post scheduling and calendar view
+- AI content generation (Claude Haiku)
+- Video queue and upload pipeline
+- Postiz integration for posting
+- Google Sheets queue ingestion
+- Analytics tracking
+- Role-based access control (admin, editor, viewer)
 
-## Requirements
+## Auth System
 
-- Python 3.9+
-- pip packages: `pip install -r requirements.txt`
+Login is required for all pages. Users are stored in `data/users.json` (not committed to git).
+
+### Roles
+
+- **admin** - full access, can add/remove clients, manage users
+- **editor** - manage content queues, schedule posts, view analytics
+- **viewer** - read-only access to dashboards and analytics
+
+### Default admin
+
+`mic@mannmade.co.za` - password set on first run (stored in `data/users.json`)
 
 ## Setup
 
-### 1. Configure secrets
+### Requirements
 
-Copy `secrets.json.example` to `secrets.json` and fill in your values:
+- Python 3.9+
+- pip packages: see `requirements.txt`
+
+```bash
+pip install -r requirements.txt
+```
+
+### Environment
+
+Copy `secrets.json.example` (if provided) to `secrets.json` and fill in:
 
 ```json
 {
   "postiz": {
-    "url": "http://your-postiz-instance:4007",
-    "localUrl": "http://localhost:4007",
-    "apiKey": "your-postiz-api-key"
+    "url": "http://localhost:4007",
+    "apiKey": ""
   },
   "socializer": {
-    "sheetId": "your-google-sheet-id",
-    "jwtSecret": "generate-a-long-random-string"
+    "sheetId": "",
+    "jwtSecret": "your-random-secret-here"
   }
 }
 ```
 
-### 2. Set environment variables (optional)
+Key environment variables (optional, override secrets.json):
 
-```bash
-export ANTHROPIC_API_KEY=sk-ant-...
-export POSTIZ_URL=http://localhost:4007
-export POSTIZ_API_KEY=your-key
-```
+| Variable | Description |
+|---|---|
+| `ANTHROPIC_API_KEY` | For AI content generation |
+| `POSTIZ_URL` | Postiz instance URL |
+| `POSTIZ_API_KEY` | Postiz API key |
 
-### 3. Run the server
+### Run
 
 ```bash
 python3 server.py
+# or
+uvicorn server:app --host 0.0.0.0 --port 7070
 ```
 
-The server starts on port 7070 by default. Open http://localhost:7070 in your browser.
+Server starts at http://localhost:7070
 
-### 4. Default login
-
-On first run, an admin account is created. Check your deployment notes for the initial credentials, then change the password via user management.
-
-## Roles
-
-| Role   | Permissions |
-|--------|-------------|
-| admin  | Full access: add/remove clients, manage users, post, view all |
-| editor | Manage content queues, schedule posts, view analytics |
-| viewer | Read-only: dashboards, analytics, scheduled posts |
-
-## User management
-
-Log in as admin, go to the **Users** tab to add, remove, or change roles for users.
-
-## Cloudflare Tunnel
-
-To expose the socializer publicly via Cloudflare Tunnel:
+### Using start.sh
 
 ```bash
-# Install cloudflared
-brew install cloudflare/cloudflare/cloudflared
-
-# Start a quick tunnel (no account needed)
-cloudflared tunnel --url http://localhost:7070
+chmod +x start.sh
+./start.sh
 ```
 
-For a persistent tunnel with a custom domain, configure `~/.cloudflared/config.yml`.
+## Client Config
 
-## Client configuration
+Client configs live in `clients/`. See `clients/new-client-template.json` for the schema.
 
-Each client has a JSON config in `clients/`. Use `clients/new-client-template.json` as a starting point. Client data files are excluded from version control to protect sensitive information.
+Each client can have:
+- Multiple social accounts per platform
+- A content inbox folder
+- A Google Sheet queue
+- A CDP port for browser automation
 
-## Development
+## Data Files (not in git)
 
-```bash
-# Install dependencies
-pip install -r requirements.txt
+- `data/users.json` - user accounts with hashed passwords
+- `secrets.json` - API keys and JWT secret
+- `clients/*.json` - client configs (excluded by .gitignore)
 
-# Run with auto-reload
-uvicorn server:app --reload --port 7070
-```
+## License
+
+Private - Mann Made Media
