@@ -1,0 +1,2829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mann Made Socializer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1a1a24;
+    --surface3: #22222f;
+    --accent: #7c6df0;
+    --accent-dim: rgba(124,109,240,0.15);
+    --text: #e8e8f0;
+    --text-dim: #8888aa;
+    --border: #2a2a3a;
+    --x-col: #ffffff;
+    --linkedin-col: #0077b5;
+    --instagram-col: #e1306c;
+    --tiktok-col: #ff0050;
+    --youtube-col: #ff0000;
+    --facebook-col: #1877f2;
+    --snapchat-col: #fffc00;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --radius: 10px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .logo-icon {
+    width: 34px;
+    height: 34px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .logo-text h1 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.1;
+  }
+
+  .logo-text span {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  nav {
+    display: flex;
+    gap: 4px;
+    flex: 1;
+  }
+
+  .nav-tab {
+    padding: 6px 16px;
+    border-radius: 7px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .nav-tab:hover { background: var(--surface2); color: var(--text); }
+  .nav-tab.active { background: var(--accent-dim); color: var(--accent); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+  }
+
+  .stats-bar {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .stats-bar span strong { color: var(--text); }
+
+  /* MAIN */
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  /* TABS */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: none;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #6b5ce0; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+
+  .btn-danger {
+    background: transparent;
+    color: var(--red);
+    border: 1px solid transparent;
+  }
+  .btn-danger:hover { background: rgba(239,68,68,0.1); border-color: var(--red); }
+
+  .btn-sm { padding: 4px 10px; font-size: 12px; border-radius: 6px; }
+
+  .btn-post-now {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+  }
+  .btn-post-now:hover { background: var(--accent-dim); }
+
+  /* SECTION HEADER */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  /* CALENDAR */
+  .calendar-nav {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .calendar-nav button {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 32px;
+    height: 32px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+  .calendar-nav button:hover { background: var(--surface3); }
+
+  #cal-month-label {
+    font-size: 16px;
+    font-weight: 600;
+    min-width: 160px;
+    text-align: center;
+  }
+
+  .calendar-grid {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cal-weekday {
+    padding: 10px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .cal-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  .cal-day {
+    min-height: 90px;
+    padding: 8px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.1s;
+    position: relative;
+  }
+
+  .cal-day:nth-child(7n) { border-right: none; }
+  .cal-day:hover { background: var(--surface2); }
+  .cal-day.other-month { opacity: 0.35; }
+
+  .cal-day.today {
+    background: var(--accent-dim);
+  }
+
+  .cal-day.today .cal-day-num {
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cal-day.selected {
+    background: rgba(124,109,240,0.1);
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+
+  .cal-day-num {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cal-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+
+  .cal-chip {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* DAY POSTS LIST */
+  .day-posts-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+
+  .day-posts-panel h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text-dim);
+  }
+
+  /* POSTS TABLE */
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-btn:hover { background: var(--surface2); color: var(--text); }
+  .filter-btn.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+
+  .posts-table {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .posts-table-header {
+    display: grid;
+    grid-template-columns: 1.8fr 2fr 1fr 0.8fr auto;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .post-row {
+    display: grid;
+    grid-template-columns: 1.8fr 2fr 1fr 0.8fr auto;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    transition: background 0.1s;
+  }
+
+  .post-row:last-child { border-bottom: none; }
+  .post-row:hover { background: var(--surface2); }
+
+  .post-account {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .platform-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .post-content {
+    color: var(--text-dim);
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .post-time {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .post-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  /* STATUS BADGES */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .badge::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .badge-scheduled { background: rgba(124,109,240,0.15); color: var(--accent); }
+  .badge-draft { background: rgba(136,136,170,0.15); color: var(--text-dim); }
+  .badge-posted { background: rgba(34,197,94,0.15); color: var(--green); }
+  .badge-failed { background: rgba(239,68,68,0.15); color: var(--red); }
+
+  /* ACCOUNTS GRID */
+  .accounts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .account-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    transition: border-color 0.15s;
+  }
+  .account-card:hover { border-color: var(--accent); }
+
+  .account-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .account-platform-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .account-info { flex: 1; min-width: 0; }
+  .account-name { font-weight: 600; font-size: 14px; }
+  .account-handle { font-size: 12px; color: var(--text-dim); }
+
+  .account-badges {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .connected-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .connected-label {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .account-card-footer {
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .info-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 24px;
+    line-height: 1.6;
+  }
+
+  .info-box code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    background: var(--surface3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--accent);
+  }
+
+  /* ANALYTICS */
+  .analytics-hero {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  .analytics-hero h2 {
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+
+  .analytics-hero p {
+    color: var(--text-dim);
+    margin-bottom: 20px;
+  }
+
+  .stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+  }
+
+  .stat-card .stat-value {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat-card .stat-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .modal-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(20px);
+    transition: transform 0.2s;
+  }
+
+  .modal-overlay.open .modal { transform: translateY(0); }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .modal-header h2 { font-size: 16px; font-weight: 600; }
+
+  .modal-close {
+    background: var(--surface2);
+    border: none;
+    color: var(--text-dim);
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .modal-close:hover { background: var(--surface3); color: var(--text); }
+
+  .modal-body { padding: 24px; }
+
+  .form-group { margin-bottom: 20px; }
+
+  .form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+
+  textarea, input[type="text"], input[type="datetime-local"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    padding: 10px 12px;
+    font-family: inherit;
+    transition: border-color 0.15s;
+    resize: vertical;
+  }
+
+  textarea:focus, input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .char-counter {
+    text-align: right;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  .char-counter.warn { color: var(--red); }
+
+  .accounts-checkboxes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+  }
+
+  .account-check-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+    transition: background 0.1s;
+  }
+
+  .account-check-label:hover { background: var(--surface2); }
+
+  .account-check-label input { accent-color: var(--accent); width: 15px; height: 15px; }
+
+  .schedule-radios {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .radio-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+
+  .radio-label input { accent-color: var(--accent); }
+
+  #schedule-datetime { margin-top: 0; }
+
+  .modal-footer {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    padding: 48px;
+    text-align: center;
+    color: var(--text-dim);
+  }
+
+  .empty-state p { margin-bottom: 16px; }
+
+  /* TOAST */
+  .toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .toast {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    animation: slideIn 0.2s ease;
+    max-width: 320px;
+  }
+
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error { border-color: var(--red); color: var(--red); }
+
+  @keyframes slideIn {
+    from { transform: translateX(20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--surface3); }
+
+  /* AI GENERATE */
+  .ai-generate-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+
+  .ai-generate-box .form-label { margin-bottom: 10px; }
+
+  .ai-generate-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .ai-generate-row input { flex: 1; }
+
+  select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    padding: 8px 10px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  select:focus { outline: none; border-color: var(--accent); }
+
+  .ai-platform-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+
+  .ai-platform-tab {
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .ai-platform-tab.active {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* MODAL INNER TABS */
+  .modal-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+  }
+
+  .modal-tab {
+    padding: 5px 12px;
+    border-radius: 7px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .modal-tab:hover { background: var(--surface2); color: var(--text); }
+  .modal-tab.active { background: var(--accent-dim); color: var(--accent); }
+
+  .modal-section { display: none; }
+  .modal-section.active { display: block; }
+
+  /* TEMPLATE CARDS */
+  .template-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .template-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .template-card:hover { border-color: var(--accent); background: var(--surface3); }
+
+  .template-card-name {
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+
+  .template-card-desc {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+
+  .template-card-platforms {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .template-platform-tag {
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: var(--surface3);
+    color: var(--text-dim);
+  }
+
+  .template-card-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  /* FULL TEMPLATE GRID (Templates tab) */
+  .templates-grid-full {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+
+  .template-card-full {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: border-color 0.15s;
+  }
+
+  .template-card-full:hover { border-color: var(--accent); }
+
+  .template-tone-badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    text-transform: capitalize;
+    font-weight: 600;
+  }
+
+  .add-template-form {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 24px;
+    display: none;
+  }
+
+  .add-template-form.open { display: block; }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    header { padding: 0 12px; gap: 12px; }
+    main { padding: 16px; }
+    .logo-text span { display: none; }
+    .stats-bar { display: none; }
+    .cal-day { min-height: 60px; }
+    .cal-chip { width: 6px; height: 6px; }
+    .posts-table-header { display: none; }
+    .post-row { grid-template-columns: 1fr; gap: 6px; }
+    .accounts-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Platform bg colours */
+  .platform-bg-x { background: rgba(255,255,255,0.08); }
+  .platform-bg-linkedin { background: rgba(0,119,181,0.2); }
+  .platform-bg-instagram { background: rgba(225,48,108,0.2); }
+  .platform-bg-tiktok { background: rgba(255,0,80,0.2); }
+  .platform-bg-youtube { background: rgba(255,0,0,0.2); }
+  .platform-bg-facebook { background: rgba(24,119,242,0.2); }
+  .platform-bg-snapchat { background: rgba(255,252,0,0.2); }
+
+  .platform-col-x { color: #ffffff; }
+  .platform-col-linkedin { color: var(--linkedin-col); }
+  .platform-col-instagram { color: var(--instagram-col); }
+  .platform-col-tiktok { color: var(--tiktok-col); }
+  .platform-col-youtube { color: var(--youtube-col); }
+  .platform-col-facebook { color: var(--facebook-col); }
+  .platform-col-snapchat { color: var(--snapchat-col); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">📡</div>
+    <div class="logo-text">
+      <h1>Mann Made Socializer</h1>
+      <span>Socializer</span>
+    </div>
+  </div>
+  <nav>
+    <button class="nav-tab active" onclick="switchTab('calendar', this)">Calendar</button>
+    <button class="nav-tab" onclick="switchTab('posts', this)">Posts</button>
+    <button class="nav-tab" onclick="switchTab('accounts', this)">Accounts</button>
+    <button class="nav-tab" onclick="switchTab('analytics', this)">Analytics</button>
+    <button class="nav-tab" onclick="switchTab('templates', this)">Templates</button>
+    <button class="nav-tab" onclick="switchTab('videos', this)">Videos</button>
+    <button class="nav-tab" onclick="switchTab('clients', this)">Clients</button>
+    <button class="nav-tab" onclick="switchTab('postiz', this)">Postiz</button>
+    <button class="nav-tab admin-only" id="tab-users" onclick="switchTab('users', this)" style="display:none">Users</button>
+  </nav>
+  <div class="header-right">
+    <div class="stats-bar" id="header-stats">
+      <span>Total: <strong id="hs-total">—</strong></span>
+      <span>Scheduled: <strong id="hs-scheduled">—</strong></span>
+      <span>Posted: <strong id="hs-posted">—</strong></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-left:16px;padding-left:16px;border-left:1px solid var(--border)">
+      <span style="font-size:12px;color:var(--text-dim)" id="user-name-display"></span>
+      <span style="font-size:11px;background:var(--accent-dim);color:var(--accent);padding:2px 8px;border-radius:20px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px" id="user-role-badge"></span>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- CALENDAR TAB -->
+  <div id="tab-calendar" class="tab-panel active">
+    <div class="section-header">
+      <div class="calendar-nav">
+        <button onclick="changeMonth(-1)">‹</button>
+        <span id="cal-month-label"></span>
+        <button onclick="changeMonth(1)">›</button>
+      </div>
+      <button class="btn btn-primary" onclick="openNewPost()">+ New Post</button>
+    </div>
+    <div class="calendar-grid">
+      <div class="cal-weekdays">
+        <div class="cal-weekday">Sun</div>
+        <div class="cal-weekday">Mon</div>
+        <div class="cal-weekday">Tue</div>
+        <div class="cal-weekday">Wed</div>
+        <div class="cal-weekday">Thu</div>
+        <div class="cal-weekday">Fri</div>
+        <div class="cal-weekday">Sat</div>
+      </div>
+      <div class="cal-days" id="cal-days"></div>
+    </div>
+    <div class="day-posts-panel" id="day-posts-panel" style="display:none">
+      <h3 id="day-posts-title">Posts for this day</h3>
+      <div id="day-posts-list"></div>
+    </div>
+  </div>
+
+  <!-- POSTS TAB -->
+  <div id="tab-posts" class="tab-panel">
+    <div class="section-header">
+      <h2 class="section-title">Posts</h2>
+      <button class="btn btn-primary" onclick="openNewPost()">+ New Post</button>
+    </div>
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+      <button class="filter-btn" onclick="setFilter('scheduled', this)">Scheduled</button>
+      <button class="filter-btn" onclick="setFilter('draft', this)">Draft</button>
+      <button class="filter-btn" onclick="setFilter('posted', this)">Posted</button>
+      <button class="filter-btn" onclick="setFilter('failed', this)">Failed</button>
+    </div>
+    <div class="posts-table">
+      <div class="posts-table-header">
+        <span>Account</span>
+        <span>Content</span>
+        <span>Scheduled</span>
+        <span>Status</span>
+        <span>Actions</span>
+      </div>
+      <div id="posts-list"></div>
+    </div>
+  </div>
+
+  <!-- ACCOUNTS TAB -->
+  <div id="tab-accounts" class="tab-panel">
+    <div class="section-header">
+      <h2 class="section-title">Accounts</h2>
+    </div>
+    <div class="accounts-grid" id="accounts-grid"></div>
+    <div class="info-box">
+      💡 <strong>To add a new account:</strong> save its browser session file to
+      <code>~/.openclaw/workspace/browser-sessions/</code> then update
+      <code>accounts.json</code> in the mann-made-media folder.
+    </div>
+  </div>
+
+  <!-- ANALYTICS TAB -->
+  <div id="tab-analytics" class="tab-panel">
+    <div class="section-header">
+      <h2 class="section-title">Analytics</h2>
+    </div>
+    <div class="analytics-hero">
+      <h2>Full Analytics Dashboard</h2>
+      <p>Detailed charts, engagement metrics, and performance data</p>
+      <a href="/analytics" class="btn btn-primary" style="display:inline-flex">📊 Open Analytics Dashboard</a>
+    </div>
+    <div class="stats-cards" id="stats-cards">
+      <div class="stat-card">
+        <div class="stat-value" id="stat-total">—</div>
+        <div class="stat-label">Total Posts</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-scheduled">—</div>
+        <div class="stat-label">Scheduled</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-posted">—</div>
+        <div class="stat-label">Posted</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-draft">—</div>
+        <div class="stat-label">Drafts</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-failed">—</div>
+        <div class="stat-label">Failed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-today">—</div>
+        <div class="stat-label">Today</div>
+      </div>
+    </div>
+    <p style="text-align:center; color:var(--text-dim); font-size:13px;">Full analytics at <a href="/analytics" style="color:var(--accent)">/analytics</a></p>
+  </div>
+
+  <!-- VIDEOS TAB -->
+  <div id="tab-videos" class="tab-panel">
+    <div class="section-header">
+      <h2 class="section-title">Videos</h2>
+    </div>
+
+    <!-- Video stats bar -->
+    <div class="stats-cards" id="video-stats-cards" style="margin-bottom:24px;">
+      <div class="stat-card">
+        <div class="stat-value" id="vstat-total">-</div>
+        <div class="stat-label">Total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="vstat-scheduled" style="color:#7c6df0">-</div>
+        <div class="stat-label">Scheduled</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="vstat-posted" style="color:var(--green)">-</div>
+        <div class="stat-label">Posted</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="vstat-failed" style="color:var(--red)">-</div>
+        <div class="stat-label">Failed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="vstat-draft" style="color:var(--text-dim)">-</div>
+        <div class="stat-label">Draft</div>
+      </div>
+    </div>
+
+    <!-- Client filter -->
+    <div class="filter-bar" style="margin-bottom:16px;">
+      <button class="filter-btn active" onclick="setVideoFilter('all', this)">All Clients</button>
+      <button class="filter-btn" onclick="setVideoFilter('mic', this)">Mic Mann</button>
+      <button class="filter-btn" onclick="setVideoFilter('exponentials', this)">The Exponentials</button>
+    </div>
+
+    <!-- Upload section -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:24px;">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:16px;">Upload Video</h3>
+
+      <!-- Drop zone -->
+      <div id="video-dropzone"
+        style="border:2px dashed var(--border);border-radius:var(--radius);padding:40px;text-align:center;cursor:pointer;transition:all 0.15s;margin-bottom:16px;"
+        onclick="document.getElementById('video-file-input').click()"
+        ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+        ondragleave="this.style.borderColor='var(--border)'"
+        ondrop="handleVideoDrop(event)">
+        <div style="font-size:32px;margin-bottom:8px;">🎬</div>
+        <div style="color:var(--text-dim);font-size:13px;">Drop video file here or click to upload</div>
+        <div style="color:var(--text-dim);font-size:11px;margin-top:6px;">Supports .mp4, .mov, .avi</div>
+      </div>
+      <input type="file" id="video-file-input" accept=".mp4,.mov,.avi" style="display:none" onchange="handleVideoFileSelect(event)">
+      <div id="video-selected-file" style="display:none;background:var(--surface2);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--text-dim)"></div>
+
+      <!-- Caption -->
+      <div class="form-group">
+        <label class="form-label">Caption</label>
+        <textarea id="video-caption" rows="3" placeholder="Enter caption for this video..."></textarea>
+      </div>
+
+      <!-- Account checkboxes - video platforms only -->
+      <div class="form-group">
+        <label class="form-label">Post To</label>
+        <div class="accounts-checkboxes" id="video-accounts-checkboxes">
+          <span style="color:var(--text-dim)">Loading...</span>
+        </div>
+      </div>
+
+      <!-- Schedule -->
+      <div class="form-group">
+        <label class="form-label">Schedule</label>
+        <div class="schedule-radios">
+          <label class="radio-label">
+            <input type="radio" name="video-schedule-type" value="now" checked onchange="toggleVideoSchedule(this)"> Post Now
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="video-schedule-type" value="schedule" onchange="toggleVideoSchedule(this)"> Schedule for later
+          </label>
+        </div>
+        <input type="datetime-local" id="video-schedule-datetime" style="display:none" />
+      </div>
+
+      <!-- Campaign -->
+      <div class="form-group">
+        <label class="form-label">Campaign <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <input type="text" id="video-campaign" placeholder="e.g. The Exponentials Season 2" />
+      </div>
+
+      <button class="btn btn-primary" onclick="uploadVideo()" id="video-upload-btn">Upload &amp; Schedule</button>
+    </div>
+
+    <!-- Video queue table -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+      <div style="display:grid;grid-template-columns:60px 1.5fr 1.2fr 1.5fr 1fr 0.8fr auto;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;">
+        <span></span>
+        <span>Filename</span>
+        <span>Accounts</span>
+        <span>Caption</span>
+        <span>Scheduled</span>
+        <span>Status</span>
+        <span>Actions</span>
+      </div>
+      <div id="video-queue-list">
+        <div class="empty-state"><p>No videos queued. Upload one above.</p></div>
+      </div>
+    </div>
+
+    <!-- Client connect info box -->
+    <div class="info-box" style="margin-top:24px;">
+      <strong>Connecting a client account (The Exponentials):</strong><br><br>
+      1. Open Chrome and create a new Profile for the client<br>
+      2. Log into their social accounts in that profile<br>
+      3. Start Chrome with remote debugging:<br>
+      <code>chrome --remote-debugging-port=18801 --user-data-dir=/tmp/client-chrome</code><br><br>
+      4. Save the session:<br>
+      <code>agent-browser --cdp 18801 state save ~/.openclaw/workspace/browser-sessions/exponentials-x-session.json</code><br><br>
+      5. Mark the account as active in the Accounts tab
+    </div>
+  </div>
+
+  <!-- TEMPLATES TAB -->
+  <div id="tab-templates" class="tab-panel">
+    <div class="section-header">
+      <h2 class="section-title">Content Templates</h2>
+      <button class="btn btn-primary" onclick="toggleAddTemplateForm()">+ Add Template</button>
+    </div>
+
+    <!-- Add template form -->
+    <div class="add-template-form" id="add-template-form">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:16px;">New Template</h3>
+      <div class="form-row" style="margin-bottom:12px;">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Name</label>
+          <input type="text" id="new-tpl-name" placeholder="e.g. Case Study" />
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Tone</label>
+          <select id="new-tpl-tone" style="width:100%">
+            <option value="professional">Professional</option>
+            <option value="casual">Casual</option>
+            <option value="bold">Bold</option>
+            <option value="conversational">Conversational</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <input type="text" id="new-tpl-desc" placeholder="Short description of this template" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Template Content <span style="font-weight:400;text-transform:none;letter-spacing:0">(use [brackets] for placeholders)</span></label>
+        <textarea id="new-tpl-content" rows="5" placeholder="[Opening line]\n\n[Main point]\n\n[Call to action]"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Platforms</label>
+        <div id="new-tpl-platforms" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+        <button class="btn btn-ghost" onclick="toggleAddTemplateForm()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveNewTemplate()">Save Template</button>
+      </div>
+    </div>
+
+    <div class="templates-grid-full" id="templates-grid-full"></div>
+  </div>
+
+  <!-- CLIENTS TAB -->
+  <div id="tab-clients" class="tab-panel">
+    <iframe id="clients-iframe" src="/clients" style="width:100%;height:calc(100vh - 120px);border:none;background:var(--bg);" title="Client Management"></iframe>
+  </div>
+
+  <!-- POSTIZ TAB -->
+  <div id="tab-postiz" class="tab-panel">
+    <div style="padding:24px;max-width:1100px;margin:0 auto;">
+
+      <!-- Status bar -->
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
+        <h2 style="font-size:18px;font-weight:700;flex:1;">Postiz Scheduler</h2>
+        <div style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:13px;">
+          <span id="postiz-dot" style="width:9px;height:9px;border-radius:50%;background:var(--text-dim);display:inline-block;"></span>
+          <span id="postiz-status-text">Checking...</span>
+          <a id="postiz-link" href="http://localhost:5001" target="_blank" style="color:var(--accent);text-decoration:none;font-size:12px;margin-left:8px;">Open Postiz</a>
+        </div>
+        <button class="btn btn-ghost" style="font-size:12px;" onclick="refreshPostizTab()">Refresh</button>
+      </div>
+
+      <!-- Channels grid -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <h3 style="font-size:14px;font-weight:600;">Connected Channels</h3>
+          <button class="btn btn-primary" style="font-size:12px;padding:6px 14px;" onclick="openPostizApp()">+ Connect Account</button>
+        </div>
+        <div id="postiz-channels-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+          <div style="color:var(--text-dim);font-size:13px;">Loading channels...</div>
+        </div>
+      </div>
+
+      <!-- Quick schedule form -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;">
+        <h3 style="font-size:14px;font-weight:600;margin-bottom:14px;">Quick Schedule</h3>
+        <textarea id="postiz-content" placeholder="Write your post..." rows="4"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:13px;resize:vertical;margin-bottom:10px;"></textarea>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <input id="postiz-schedule-time" type="datetime-local"
+            style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;" />
+          <div id="postiz-platform-picks" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+          <button class="btn btn-primary" style="margin-left:auto;" onclick="postizSchedulePost()">Schedule</button>
+        </div>
+        <div id="postiz-schedule-result" style="margin-top:10px;font-size:13px;"></div>
+      </div>
+
+      <!-- Scheduled posts queue -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <h3 style="font-size:14px;font-weight:600;">Scheduled Posts</h3>
+          <select id="postiz-post-status" onchange="loadPostizPosts()" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px;">
+            <option value="pending">Pending</option>
+            <option value="published">Published</option>
+            <option value="failed">Failed</option>
+          </select>
+        </div>
+        <div id="postiz-posts-list" style="display:flex;flex-direction:column;gap:10px;">
+          <div style="color:var(--text-dim);font-size:13px;">No posts loaded yet.</div>
+        </div>
+      </div>
+
+      <!-- SHEET SETUP SECTION -->
+      <div class="card" style="margin-top:24px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+          <h2 style="font-size:16px;font-weight:700;">Sheet Queue Setup</h2>
+          <span style="font-size:12px;color:var(--text-dim);">Google Drive to Postiz pipeline</span>
+        </div>
+
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:var(--text-dim);line-height:1.7;">
+          <strong style="color:var(--text);">How it works:</strong><br>
+          1. Create a Google Sheet with the columns below.<br>
+          2. Share it with <strong style="color:var(--accent);">ai@mannmade.co.za</strong> (Editor access).<br>
+          3. Paste the Sheet ID here and click Save. The poller runs every 15 minutes.<br>
+          4. Set a row's Status column to <strong style="color:var(--green);">pending</strong> to queue it. Drop videos in Google Drive and paste the share link in Column C.
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:16px;">
+          <div style="flex:1;">
+            <label class="form-label" style="font-size:12px;margin-bottom:4px;">Sheet ID</label>
+            <input id="sheet-id-input" type="text"
+              placeholder="e.g. 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"
+              style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;font-family:monospace;"
+              oninput="document.getElementById('sheet-save-btn').disabled=false"
+            />
+            <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Find this in the Google Sheet URL: docs.google.com/spreadsheets/d/<strong>SHEET_ID</strong>/edit</div>
+          </div>
+          <button id="sheet-save-btn" class="btn btn-primary" style="padding:8px 16px;font-size:13px;" onclick="saveSheetId()" disabled>Save</button>
+          <button class="btn btn-ghost" style="padding:8px 16px;font-size:13px;" onclick="triggerSheetSync()">Sync Now</button>
+        </div>
+
+        <div id="sheet-sync-result" style="font-size:13px;margin-bottom:16px;display:none;"></div>
+
+        <div style="margin-top:8px;">
+          <div style="font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">Sheet Column Structure</div>
+          <div id="sheet-template-table" style="overflow-x:auto;">
+            <div style="font-size:12px;color:var(--text-dim);">Loading template...</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- USERS TAB (admin only) -->
+  <div id="tab-users" class="tab-panel">
+    <div style="padding:24px;max-width:900px;margin:0 auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+        <h2 style="font-size:18px;font-weight:700;">User Management</h2>
+        <button class="btn btn-primary" onclick="openCreateUserModal()">+ Add User</button>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);">
+              <th style="text-align:left;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Name</th>
+              <th style="text-align:left;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Email</th>
+              <th style="text-align:left;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Role</th>
+              <th style="text-align:left;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Created</th>
+              <th style="padding:12px 16px;"></th>
+            </tr>
+          </thead>
+          <tbody id="users-table-body">
+            <tr><td colspan="5" style="padding:24px;text-align:center;color:var(--text-dim);">Loading users...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create User Modal -->
+  <div id="create-user-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center;">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:32px;width:100%;max-width:440px;margin:0 20px;">
+      <h3 style="font-size:16px;font-weight:700;margin-bottom:24px;">Add User</h3>
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Name</label>
+        <input type="text" id="new-user-name" placeholder="Full name" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;font-family:inherit;">
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Email</label>
+        <input type="email" id="new-user-email" placeholder="user@example.com" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;font-family:inherit;">
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Password</label>
+        <input type="password" id="new-user-password" placeholder="Min 8 characters" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;font-family:inherit;">
+      </div>
+      <div style="margin-bottom:24px;">
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Role</label>
+        <select id="new-user-role" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;font-family:inherit;">
+          <option value="viewer">Viewer - read-only access</option>
+          <option value="editor">Editor - manage content and schedules</option>
+          <option value="admin">Admin - full access</option>
+        </select>
+      </div>
+      <div id="create-user-error" style="display:none;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:10px 12px;color:#ef4444;font-size:13px;margin-bottom:16px;"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-ghost" onclick="closeCreateUserModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitCreateUser()">Create User</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- NEW POST MODAL -->
+<div class="modal-overlay" id="new-post-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>New Post</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Modal inner tabs -->
+      <div class="modal-tabs">
+        <button class="modal-tab active" onclick="switchModalTab('write', this)">✏️ Write</button>
+        <button class="modal-tab" onclick="switchModalTab('generate', this)">✨ Generate with AI</button>
+        <button class="modal-tab" onclick="switchModalTab('templates', this)">🗂 Templates</button>
+      </div>
+
+      <!-- Write section -->
+      <div class="modal-section active" id="modal-section-write">
+        <div class="form-group">
+          <label class="form-label">Content</label>
+          <textarea id="post-content" rows="5" placeholder="What do you want to share?" oninput="updateCharCount()"></textarea>
+          <div class="char-counter" id="char-counter">0 characters</div>
+        </div>
+      </div>
+
+      <!-- Generate with AI section -->
+      <div class="modal-section" id="modal-section-generate">
+        <div class="ai-generate-box">
+          <label class="form-label">✨ Generate with AI</label>
+          <div class="ai-generate-row">
+            <input type="text" id="ai-topic" placeholder="Topic, idea, or paste a URL..." />
+            <select id="ai-tone">
+              <option value="professional">Professional</option>
+              <option value="casual">Casual</option>
+              <option value="bold">Bold</option>
+              <option value="conversational">Conversational</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" id="ai-generate-btn" onclick="generateContent()" style="width:100%;">✨ Generate</button>
+        </div>
+        <!-- Generated results per platform -->
+        <div id="ai-results" style="display:none;">
+          <div class="ai-platform-tabs" id="ai-platform-tabs"></div>
+          <div class="form-group">
+            <textarea id="ai-generated-content" rows="6" oninput="syncGeneratedToMain()"></textarea>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+              <span style="font-size:12px;color:var(--text-dim)">Edit above, then click "Use This Post"</span>
+              <button class="btn btn-primary btn-sm" onclick="useGeneratedContent()">Use This Post →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Templates section -->
+      <div class="modal-section" id="modal-section-templates">
+        <div id="modal-template-grid" class="template-grid"></div>
+      </div>
+
+
+      <div class="form-group">
+        <label class="form-label">Accounts</label>
+        <div class="accounts-checkboxes" id="accounts-checkboxes">
+          <span style="color:var(--text-dim)">Loading...</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Schedule</label>
+        <div class="schedule-radios">
+          <label class="radio-label">
+            <input type="radio" name="schedule-type" value="now" checked onchange="toggleSchedule(this)"> Post Now
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="schedule-type" value="schedule" onchange="toggleSchedule(this)"> Schedule for later
+          </label>
+        </div>
+        <input type="datetime-local" id="schedule-datetime" style="display:none" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Campaign <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <input type="text" id="post-campaign" placeholder="e.g. Product Launch, SUSA Summit…" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-ghost" onclick="submitPost('draft')">Save Draft</button>
+      <button class="btn btn-primary" id="submit-btn" onclick="submitPost('auto')">Post Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ===== STATE =====
+let currentTab = 'calendar';
+let currentFilter = 'all';
+let allPosts = [];
+let allAccounts = [];
+let calendarYear, calendarMonth;
+let calendarData = {}; // date -> [posts]
+let selectedDay = null;
+let currentUser = null;
+
+const PLATFORM_ICONS = {
+  x: '𝕏', linkedin: '💼', instagram: '📸',
+  tiktok: '🎵', youtube: '▶️', facebook: '👥', snapchat: '👻'
+};
+
+const PLATFORM_COLOURS = {
+  x: '#ffffff', linkedin: '#0077b5', instagram: '#e1306c',
+  tiktok: '#ff0050', youtube: '#ff0000', facebook: '#1877f2', snapchat: '#fffc00'
+};
+
+// ===== AUTH =====
+async function loadCurrentUser() {
+  try {
+    const res = await fetch('/api/auth/me', { credentials: 'include' });
+    if (!res.ok) { window.location.href = '/login'; return; }
+    currentUser = await res.json();
+    document.getElementById('user-name-display').textContent = currentUser.name || currentUser.email;
+    document.getElementById('user-role-badge').textContent = currentUser.role;
+    // Show Users tab only for admin
+    if (currentUser.role === 'admin') {
+      document.getElementById('tab-users').style.display = '';
+    }
+  } catch (e) {
+    window.location.href = '/login';
+  }
+}
+
+async function doLogout() {
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/login';
+}
+
+// ===== INIT =====
+const now = new Date();
+calendarYear = now.getFullYear();
+calendarMonth = now.getMonth();
+
+async function init() {
+  await loadCurrentUser();
+  await Promise.all([loadPosts(), loadAccounts(), loadStats(), loadTemplates()]);
+  renderCalendar();
+  renderPostsList();
+  renderAccountsGrid();
+}
+
+init();
+setInterval(loadStats, 30000);
+
+// ===== USERS TAB =====
+async function loadUsers() {
+  try {
+    const res = await fetch('/api/auth/users', { credentials: 'include' });
+    if (!res.ok) return;
+    const users = await res.json();
+    const tbody = document.getElementById('users-table-body');
+    if (!users.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;text-align:center;color:var(--text-dim);">No users found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = users.map(u => `
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:12px 16px;font-weight:500;">${u.name || '—'}</td>
+        <td style="padding:12px 16px;color:var(--text-dim);">${u.email}</td>
+        <td style="padding:12px 16px;">
+          <span style="font-size:11px;background:var(--accent-dim);color:var(--accent);padding:2px 8px;border-radius:20px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;">${u.role}</span>
+        </td>
+        <td style="padding:12px 16px;color:var(--text-dim);font-size:12px;">${u.created_at ? u.created_at.split('T')[0] : '—'}</td>
+        <td style="padding:12px 16px;text-align:right;">
+          ${u.email !== currentUser?.email ? `<button class="btn btn-danger btn-sm" onclick="deleteUser('${u.email}')">Remove</button>` : ''}
+        </td>
+      </tr>
+    `).join('');
+  } catch (e) { console.error('loadUsers:', e); }
+}
+
+async function deleteUser(email) {
+  if (!confirm(`Remove user ${email}? This cannot be undone.`)) return;
+  const res = await fetch(`/api/auth/users/${encodeURIComponent(email)}`, { method: 'DELETE', credentials: 'include' });
+  if (res.ok) { loadUsers(); } else { alert('Failed to remove user'); }
+}
+
+function openCreateUserModal() {
+  document.getElementById('create-user-modal').style.display = 'flex';
+  document.getElementById('new-user-name').value = '';
+  document.getElementById('new-user-email').value = '';
+  document.getElementById('new-user-password').value = '';
+  document.getElementById('new-user-role').value = 'viewer';
+  document.getElementById('create-user-error').style.display = 'none';
+}
+
+function closeCreateUserModal() {
+  document.getElementById('create-user-modal').style.display = 'none';
+}
+
+async function submitCreateUser() {
+  const errEl = document.getElementById('create-user-error');
+  errEl.style.display = 'none';
+  const body = {
+    name: document.getElementById('new-user-name').value.trim(),
+    email: document.getElementById('new-user-email').value.trim(),
+    password: document.getElementById('new-user-password').value,
+    role: document.getElementById('new-user-role').value,
+  };
+  if (!body.email) { errEl.textContent = 'Email is required'; errEl.style.display = 'block'; return; }
+  if (!body.password || body.password.length < 8) { errEl.textContent = 'Password must be at least 8 characters'; errEl.style.display = 'block'; return; }
+  const res = await fetch('/api/auth/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(body),
+  });
+  if (res.ok) {
+    closeCreateUserModal();
+    loadUsers();
+  } else {
+    const d = await res.json().catch(() => ({}));
+    errEl.textContent = d.detail || 'Failed to create user';
+    errEl.style.display = 'block';
+  }
+}
+
+// ===== TAB SWITCHING =====
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  btn.classList.add('active');
+  currentTab = tab;
+  if (tab === 'templates') renderFullTemplatesGrid();
+  if (tab === 'videos') onVideoTabSwitch();
+  if (tab === 'postiz') refreshPostizTab();
+  if (tab === 'users') loadUsers();
+}
+
+// ===== API CALLS =====
+async function loadPosts() {
+  try {
+    const res = await fetch('/api/posts');
+    allPosts = await res.json();
+    buildCalendarData();
+    renderCalendar();
+    renderPostsList();
+  } catch(e) { console.error('Posts load error:', e); }
+}
+
+async function loadAccounts() {
+  try {
+    const res = await fetch('/api/accounts');
+    allAccounts = await res.json();
+    renderAccountsGrid();
+    populateAccountCheckboxes();
+  } catch(e) { console.error('Accounts load error:', e); }
+}
+
+async function loadStats() {
+  try {
+    const res = await fetch('/api/stats');
+    const s = await res.json();
+    document.getElementById('hs-total').textContent = s.total ?? 0;
+    document.getElementById('hs-scheduled').textContent = s.scheduled ?? 0;
+    document.getElementById('hs-posted').textContent = s.posted ?? 0;
+    document.getElementById('stat-total').textContent = s.total ?? 0;
+    document.getElementById('stat-scheduled').textContent = s.scheduled ?? 0;
+    document.getElementById('stat-posted').textContent = s.posted ?? 0;
+    document.getElementById('stat-draft').textContent = s.draft ?? 0;
+    document.getElementById('stat-failed').textContent = s.failed ?? 0;
+    document.getElementById('stat-today').textContent = s.today ?? 0;
+  } catch(e) { console.error('Stats error:', e); }
+}
+
+// ===== CALENDAR =====
+function buildCalendarData() {
+  calendarData = {};
+  allPosts.forEach(p => {
+    if (!p.scheduled_time) return;
+    const d = new Date(p.scheduled_time);
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    if (!calendarData[key]) calendarData[key] = [];
+    calendarData[key].push(p);
+  });
+}
+
+function changeMonth(dir) {
+  calendarMonth += dir;
+  if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
+  if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-month-label').textContent = `${months[calendarMonth]} ${calendarYear}`;
+
+  const container = document.getElementById('cal-days');
+  container.innerHTML = '';
+
+  const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+  const daysInPrev = new Date(calendarYear, calendarMonth, 0).getDate();
+  const today = new Date();
+
+  // prev month fill
+  for (let i = firstDay - 1; i >= 0; i--) {
+    const d = daysInPrev - i;
+    container.appendChild(createDayCell(calendarYear, calendarMonth - 1, d, true));
+  }
+
+  // current month
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = d === today.getDate() && calendarMonth === today.getMonth() && calendarYear === today.getFullYear();
+    container.appendChild(createDayCell(calendarYear, calendarMonth, d, false, isToday));
+  }
+
+  // next month fill
+  const totalCells = firstDay + daysInMonth;
+  const remainder = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+  for (let d = 1; d <= remainder; d++) {
+    container.appendChild(createDayCell(calendarYear, calendarMonth + 1, d, true));
+  }
+}
+
+function createDayCell(y, m, d, otherMonth, isToday) {
+  const cell = document.createElement('div');
+  cell.className = 'cal-day' + (otherMonth ? ' other-month' : '') + (isToday ? ' today' : '');
+
+  // normalize month for key
+  let ky = y, km = m;
+  if (km < 0) { km = 11; ky--; }
+  if (km > 11) { km = 0; ky++; }
+  const key = `${ky}-${km}-${d}`;
+
+  const num = document.createElement('div');
+  num.className = 'cal-day-num';
+  num.textContent = d;
+  cell.appendChild(num);
+
+  const posts = calendarData[key] || [];
+  if (posts.length > 0) {
+    const chips = document.createElement('div');
+    chips.className = 'cal-chips';
+    posts.forEach(p => {
+      const chip = document.createElement('div');
+      chip.className = 'cal-chip';
+      chip.style.background = PLATFORM_COLOURS[p.platform] || '#7c6df0';
+      chip.title = `${p.platform}: ${(p.content || '').substring(0, 40)}`;
+      chips.appendChild(chip);
+    });
+    cell.appendChild(chips);
+  }
+
+  if (!otherMonth) {
+    cell.onclick = () => selectDay(ky, km, d, posts, cell);
+  }
+
+  return cell;
+}
+
+function selectDay(y, m, d, posts, cell) {
+  document.querySelectorAll('.cal-day.selected').forEach(c => c.classList.remove('selected'));
+  cell.classList.add('selected');
+
+  const panel = document.getElementById('day-posts-panel');
+  const title = document.getElementById('day-posts-title');
+  const list = document.getElementById('day-posts-list');
+
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  title.textContent = `Posts for ${months[m]} ${d}, ${y}`;
+
+  if (posts.length === 0) {
+    list.innerHTML = '<div class="empty-state"><p>No posts scheduled for this day.</p><button class="btn btn-primary" onclick="openNewPost()">+ New Post</button></div>';
+  } else {
+    list.innerHTML = posts.map(p => buildPostRow(p)).join('');
+  }
+
+  panel.style.display = 'block';
+}
+
+// ===== POSTS =====
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPostsList();
+}
+
+function renderPostsList() {
+  const container = document.getElementById('posts-list');
+  let filtered = allPosts;
+  if (currentFilter !== 'all') {
+    filtered = allPosts.filter(p => p.status === currentFilter);
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="empty-state"><p>No posts found.</p><button class="btn btn-primary" onclick="openNewPost()">+ New Post</button></div>';
+    return;
+  }
+
+  container.innerHTML = filtered.map(p => buildPostRow(p)).join('');
+}
+
+function buildPostRow(p) {
+  const icon = PLATFORM_ICONS[p.platform] || '📄';
+  const account = allAccounts.find(a => a.id === p.account_id) || {};
+  const handle = account.handle || p.account_id || 'Unknown';
+  const content = (p.content || '').substring(0, 80) + ((p.content || '').length > 80 ? '…' : '');
+  const time = p.scheduled_time ? new Date(p.scheduled_time).toLocaleString() : '—';
+  const badge = `<span class="badge badge-${p.status || 'draft'}">${p.status || 'draft'}</span>`;
+
+  return `
+    <div class="post-row">
+      <div class="post-account">
+        <span class="platform-icon">${icon}</span>
+        <div>
+          <div style="font-weight:500">${handle}</div>
+          <div style="font-size:11px;color:var(--text-dim);text-transform:capitalize">${p.platform || ''}</div>
+        </div>
+      </div>
+      <div class="post-content">${escapeHtml(content)}</div>
+      <div class="post-time">${time}</div>
+      <div>${badge}</div>
+      <div class="post-actions">
+        ${p.status !== 'posted' ? `<button class="btn btn-sm btn-post-now" onclick="postNow('${p.id}')">Post Now</button>` : ''}
+        <button class="btn btn-sm btn-danger" onclick="deletePost('${p.id}')">✕</button>
+      </div>
+    </div>`;
+}
+
+async function postNow(id) {
+  try {
+    const res = await fetch(`/api/posts/${id}/post-now`, { method: 'POST' });
+    const data = await res.json();
+    if (res.ok) {
+      showToast('Post queued for immediate publishing!', 'success');
+      await loadPosts();
+    } else {
+      showToast(data.error || 'Failed to post', 'error');
+    }
+  } catch(e) {
+    showToast('Network error', 'error');
+  }
+}
+
+async function deletePost(id) {
+  if (!confirm('Delete this post?')) return;
+  try {
+    const res = await fetch(`/api/posts/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      showToast('Post deleted', 'success');
+      await loadPosts();
+    }
+  } catch(e) {
+    showToast('Delete failed', 'error');
+  }
+}
+
+// ===== ACCOUNTS =====
+function renderAccountsGrid() {
+  const grid = document.getElementById('accounts-grid');
+  if (!allAccounts.length) {
+    grid.innerHTML = '<div class="empty-state"><p>No accounts configured.</p></div>';
+    return;
+  }
+
+  grid.innerHTML = allAccounts.map(a => {
+    const icon = PLATFORM_ICONS[a.platform] || '📄';
+    const activeBadge = a.active
+      ? '<span class="badge badge-posted">Active</span>'
+      : '<span class="badge badge-draft">Inactive</span>';
+    const connectedColor = a.connected ? 'var(--green)' : 'var(--red)';
+    const connectedText = a.connected ? 'Connected' : 'Not connected';
+
+    return `
+      <div class="account-card">
+        <div class="account-card-header">
+          <div class="account-platform-icon platform-bg-${a.platform}">
+            <span class="platform-col-${a.platform}">${icon}</span>
+          </div>
+          <div class="account-info">
+            <div class="account-name">${escapeHtml(a.name)}</div>
+            <div class="account-handle">${escapeHtml(a.handle)}</div>
+          </div>
+        </div>
+        <div class="account-badges">
+          ${activeBadge}
+          <div class="connected-dot" style="background:${connectedColor}"></div>
+          <span class="connected-label">${connectedText}</span>
+        </div>
+        <div class="account-card-footer">
+          <button class="btn btn-ghost btn-sm" onclick="toggleAccount('${a.id}', ${!a.active})">
+            ${a.active ? '⏸ Deactivate' : '▶ Activate'}
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function toggleAccount(id, newActive) {
+  const account = allAccounts.find(a => a.id === id);
+  if (!account) return;
+  try {
+    const res = await fetch(`/api/accounts/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...account, active: newActive })
+    });
+    if (res.ok) {
+      showToast(newActive ? 'Account activated' : 'Account deactivated', 'success');
+      await loadAccounts();
+    } else {
+      // Try to at least update UI optimistically
+      account.active = newActive;
+      renderAccountsGrid();
+      showToast(newActive ? 'Account activated' : 'Account deactivated', 'success');
+    }
+  } catch(e) {
+    showToast('Update failed', 'error');
+  }
+}
+
+// ===== MODAL =====
+let allTemplates = [];
+let generatedPosts = {}; // platform -> text
+let currentGeneratedPlatform = null;
+
+function openNewPost(prefillContent) {
+  document.getElementById('post-content').value = prefillContent || '';
+  document.getElementById('post-campaign').value = '';
+  document.getElementById('char-counter').textContent = '0 characters';
+  document.getElementById('char-counter').classList.remove('warn');
+  document.querySelector('input[name="schedule-type"][value="now"]').checked = true;
+  document.getElementById('schedule-datetime').style.display = 'none';
+  document.getElementById('submit-btn').textContent = 'Post Now';
+  populateAccountCheckboxes();
+  // Reset to Write tab
+  switchModalTab('write', document.querySelector('.modal-tab'));
+  // Reset AI state
+  generatedPosts = {};
+  currentGeneratedPlatform = null;
+  document.getElementById('ai-results').style.display = 'none';
+  document.getElementById('ai-topic').value = '';
+  // Load templates for modal
+  renderModalTemplates();
+  document.getElementById('new-post-modal').classList.add('open');
+  if (prefillContent) updateCharCount();
+}
+
+function closeModal() {
+  document.getElementById('new-post-modal').classList.remove('open');
+}
+
+function switchModalTab(tab, btn) {
+  document.querySelectorAll('.modal-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.modal-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('modal-section-' + tab).classList.add('active');
+  if (btn) btn.classList.add('active');
+  // If switching to generate, pre-select accounts in the generator
+}
+
+// ===== AI GENERATE =====
+async function generateContent() {
+  const topic = document.getElementById('ai-topic').value.trim();
+  if (!topic) { showToast('Enter a topic or URL first', 'error'); return; }
+
+  const selectedAccounts = [...document.querySelectorAll('#accounts-checkboxes input:checked')].map(i => i.value);
+  if (!selectedAccounts.length) { showToast('Select at least one account first', 'error'); return; }
+
+  const tone = document.getElementById('ai-tone').value;
+  const btn = document.getElementById('ai-generate-btn');
+  btn.textContent = 'Generating...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic, account_ids: selectedAccounts, tone })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.detail || 'Generation failed', 'error');
+      return;
+    }
+    generatedPosts = data.posts || {};
+    const platforms = Object.keys(generatedPosts);
+    if (!platforms.length) { showToast('No content generated', 'error'); return; }
+
+    // Render platform tabs
+    const tabsEl = document.getElementById('ai-platform-tabs');
+    tabsEl.innerHTML = platforms.map((p, i) =>
+      `<button class="ai-platform-tab ${i===0?'active':''}" onclick="selectGeneratedPlatform('${p}', this)">${PLATFORM_ICONS[p]||p} ${p}</button>`
+    ).join('');
+
+    // Show first platform's content
+    currentGeneratedPlatform = platforms[0];
+    document.getElementById('ai-generated-content').value = generatedPosts[platforms[0]];
+    document.getElementById('ai-results').style.display = 'block';
+    showToast('Content generated!', 'success');
+  } catch(e) {
+    showToast('Generation failed: ' + e.message, 'error');
+  } finally {
+    btn.textContent = '✨ Generate';
+    btn.disabled = false;
+  }
+}
+
+function selectGeneratedPlatform(platform, btn) {
+  // Save current edits
+  if (currentGeneratedPlatform) {
+    generatedPosts[currentGeneratedPlatform] = document.getElementById('ai-generated-content').value;
+  }
+  currentGeneratedPlatform = platform;
+  document.querySelectorAll('.ai-platform-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('ai-generated-content').value = generatedPosts[platform] || '';
+}
+
+function useGeneratedContent() {
+  // Save current edits
+  if (currentGeneratedPlatform) {
+    generatedPosts[currentGeneratedPlatform] = document.getElementById('ai-generated-content').value;
+  }
+  const content = document.getElementById('ai-generated-content').value.trim();
+  if (!content) { showToast('Nothing to use', 'error'); return; }
+  document.getElementById('post-content').value = content;
+  updateCharCount();
+  // Switch to write tab
+  const writeBtns = document.querySelectorAll('.modal-tab');
+  switchModalTab('write', writeBtns[0]);
+  showToast('Content loaded — edit and post!', 'success');
+}
+
+function syncGeneratedToMain() {
+  if (currentGeneratedPlatform) {
+    generatedPosts[currentGeneratedPlatform] = document.getElementById('ai-generated-content').value;
+  }
+}
+
+// ===== MODAL TEMPLATES =====
+function renderModalTemplates() {
+  const grid = document.getElementById('modal-template-grid');
+  if (!allTemplates.length) {
+    grid.innerHTML = '<div style="color:var(--text-dim);font-size:13px;">Loading templates...</div>';
+    return;
+  }
+  grid.innerHTML = allTemplates.map(t => {
+    const platforms = (t.platforms || []).map(p =>
+      `<span class="template-platform-tag">${PLATFORM_ICONS[p]||p} ${p}</span>`
+    ).join('');
+    return `
+      <div class="template-card" onclick="useTemplate(${JSON.stringify(t.template).replace(/"/g,'&quot;')})">
+        <div class="template-card-name">${escapeHtml(t.name)}</div>
+        <div class="template-card-desc">${escapeHtml(t.description)}</div>
+        <div class="template-card-platforms">${platforms}</div>
+      </div>`;
+  }).join('');
+}
+
+function useTemplate(templateText) {
+  document.getElementById('post-content').value = templateText;
+  updateCharCount();
+  const writeBtns = document.querySelectorAll('.modal-tab');
+  switchModalTab('write', writeBtns[0]);
+  showToast('Template loaded — fill in the [placeholders]', 'success');
+}
+
+// ===== TEMPLATES TAB =====
+async function loadTemplates() {
+  try {
+    const res = await fetch('/api/templates');
+    allTemplates = await res.json();
+    renderModalTemplates();
+    renderFullTemplatesGrid();
+  } catch(e) { console.error('Templates load error:', e); }
+}
+
+function renderFullTemplatesGrid() {
+  const grid = document.getElementById('templates-grid-full');
+  if (!grid) return;
+  if (!allTemplates.length) {
+    grid.innerHTML = '<div class="empty-state"><p>No templates found.</p></div>';
+    return;
+  }
+  grid.innerHTML = allTemplates.map(t => {
+    const platforms = (t.platforms || []).map(p =>
+      `<span class="template-platform-tag">${PLATFORM_ICONS[p]||p} ${p}</span>`
+    ).join('');
+    const isDefault = !t.is_custom;
+    const defaultIds = ['thought-leadership','story-lesson','stat-insight','hot-take','product-update','question-engagement','africa-insight','event-promo','tiktok-hook','weekly-recap'];
+    const canDelete = !defaultIds.includes(t.id);
+
+    return `
+      <div class="template-card-full">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div class="template-card-name" style="font-size:14px;">${escapeHtml(t.name)}</div>
+          <span class="template-tone-badge">${escapeHtml(t.tone || 'general')}</span>
+        </div>
+        <div class="template-card-desc" style="font-size:12px;color:var(--text-dim);">${escapeHtml(t.description)}</div>
+        <div class="template-card-platforms">${platforms}</div>
+        <div style="flex:1;"></div>
+        <div class="template-card-actions">
+          <button class="btn btn-sm btn-primary" onclick="openNewPost(${JSON.stringify(t.template).replace(/"/g,'&quot;')})">Use Template</button>
+          ${canDelete ? `<button class="btn btn-sm btn-danger" onclick="deleteTemplate('${t.id}')">Delete</button>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function toggleAddTemplateForm() {
+  const form = document.getElementById('add-template-form');
+  form.classList.toggle('open');
+  if (form.classList.contains('open')) {
+    renderNewTemplatePlatformCheckboxes();
+  }
+}
+
+function renderNewTemplatePlatformCheckboxes() {
+  const platforms = ['x', 'linkedin', 'instagram', 'facebook', 'tiktok', 'youtube'];
+  const container = document.getElementById('new-tpl-platforms');
+  container.innerHTML = platforms.map(p =>
+    `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;">
+      <input type="checkbox" value="${p}" style="accent-color:var(--accent)">
+      ${PLATFORM_ICONS[p]||p} ${p}
+    </label>`
+  ).join('');
+}
+
+async function saveNewTemplate() {
+  const name = document.getElementById('new-tpl-name').value.trim();
+  const desc = document.getElementById('new-tpl-desc').value.trim();
+  const template = document.getElementById('new-tpl-content').value.trim();
+  const tone = document.getElementById('new-tpl-tone').value;
+  const platforms = [...document.querySelectorAll('#new-tpl-platforms input:checked')].map(i => i.value);
+
+  if (!name || !template) { showToast('Name and content are required', 'error'); return; }
+
+  try {
+    const res = await fetch('/api/templates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, description: desc, template, tone, platforms, is_custom: true })
+    });
+    if (res.ok) {
+      showToast('Template saved!', 'success');
+      toggleAddTemplateForm();
+      // Clear form
+      document.getElementById('new-tpl-name').value = '';
+      document.getElementById('new-tpl-desc').value = '';
+      document.getElementById('new-tpl-content').value = '';
+      await loadTemplates();
+    } else {
+      showToast('Failed to save template', 'error');
+    }
+  } catch(e) {
+    showToast('Save failed', 'error');
+  }
+}
+
+async function deleteTemplate(id) {
+  if (!confirm('Delete this template?')) return;
+  try {
+    const res = await fetch(`/api/templates/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      showToast('Template deleted', 'success');
+      await loadTemplates();
+    } else {
+      const d = await res.json();
+      showToast(d.detail || 'Delete failed', 'error');
+    }
+  } catch(e) {
+    showToast('Delete failed', 'error');
+  }
+}
+
+function populateAccountCheckboxes() {
+  const container = document.getElementById('accounts-checkboxes');
+  if (!allAccounts.length) {
+    container.innerHTML = '<span style="color:var(--text-dim)">No accounts configured</span>';
+    return;
+  }
+  container.innerHTML = allAccounts.map(a => {
+    const icon = PLATFORM_ICONS[a.platform] || '📄';
+    const disabled = !a.active ? 'style="opacity:0.4"' : '';
+    return `
+      <label class="account-check-label" ${disabled}>
+        <input type="checkbox" value="${a.id}" ${a.active ? '' : 'disabled'}>
+        <span>${icon}</span>
+        <span>${escapeHtml(a.name)} — ${escapeHtml(a.handle)}</span>
+      </label>`;
+  }).join('');
+}
+
+function toggleSchedule(radio) {
+  const dt = document.getElementById('schedule-datetime');
+  const btn = document.getElementById('submit-btn');
+  if (radio.value === 'schedule') {
+    dt.style.display = 'block';
+    btn.textContent = 'Schedule';
+    // Set default to 1 hour from now
+    const d = new Date(Date.now() + 3600000);
+    dt.value = d.toISOString().slice(0,16);
+  } else {
+    dt.style.display = 'none';
+    btn.textContent = 'Post Now';
+  }
+}
+
+function updateCharCount() {
+  const content = document.getElementById('post-content').value;
+  const len = content.length;
+  const counter = document.getElementById('char-counter');
+  counter.textContent = `${len} characters`;
+  counter.classList.toggle('warn', len > 280);
+}
+
+async function submitPost(mode) {
+  const content = document.getElementById('post-content').value.trim();
+  if (!content) { showToast('Please enter some content', 'error'); return; }
+
+  const selectedAccounts = [...document.querySelectorAll('#accounts-checkboxes input:checked')].map(i => i.value);
+  if (!selectedAccounts.length) { showToast('Select at least one account', 'error'); return; }
+
+  const scheduleType = document.querySelector('input[name="schedule-type"]:checked').value;
+  const scheduledTime = scheduleType === 'schedule'
+    ? new Date(document.getElementById('schedule-datetime').value).toISOString()
+    : null;
+
+  const campaign = document.getElementById('post-campaign').value.trim();
+
+  let status = 'draft';
+  if (mode === 'auto') {
+    status = scheduleType === 'now' ? 'scheduled' : 'scheduled';
+  }
+
+  // Create one post per account
+  const promises = selectedAccounts.map(accountId => {
+    const account = allAccounts.find(a => a.id === accountId);
+    return fetch('/api/posts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content,
+        account_id: accountId,
+        platform: account?.platform,
+        scheduled_time: scheduledTime,
+        status,
+        campaign: campaign || null
+      })
+    });
+  });
+
+  try {
+    await Promise.all(promises);
+    closeModal();
+    showToast(mode === 'draft' ? 'Saved as draft' : (scheduleType === 'now' ? 'Queued for posting!' : 'Scheduled!'), 'success');
+    await loadPosts();
+
+    // If posting now, trigger post-now for each
+    if (mode === 'auto' && scheduleType === 'now') {
+      // Small delay then reload to get IDs
+      setTimeout(async () => {
+        const freshPosts = await fetch('/api/posts').then(r => r.json());
+        const newPosts = freshPosts.filter(p => selectedAccounts.includes(p.account_id) && p.content === content && p.status === 'scheduled');
+        for (const p of newPosts) {
+          await fetch(`/api/posts/${p.id}/post-now`, { method: 'POST' });
+        }
+        await loadPosts();
+      }, 500);
+    }
+  } catch(e) {
+    showToast('Failed to save post', 'error');
+  }
+}
+
+// Close modal on overlay click
+document.getElementById('new-post-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ===== TOAST =====
+function showToast(msg, type = 'success') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+}
+
+// ===== UTILS =====
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+// ===== VIDEOS =====
+let allVideos = [];
+let videoFilter = 'all';
+let selectedVideoFile = null;
+
+const VIDEO_PLATFORMS = ['x', 'instagram', 'tiktok', 'youtube'];
+
+async function loadVideos() {
+  try {
+    const [vres, sres] = await Promise.all([
+      fetch('/api/videos'),
+      fetch('/api/videos/stats')
+    ]);
+    allVideos = await vres.json();
+    const stats = await sres.json();
+    document.getElementById('vstat-total').textContent = stats.total ?? 0;
+    document.getElementById('vstat-scheduled').textContent = stats.scheduled ?? 0;
+    document.getElementById('vstat-posted').textContent = stats.posted ?? 0;
+    document.getElementById('vstat-failed').textContent = stats.failed ?? 0;
+    document.getElementById('vstat-draft').textContent = stats.draft ?? 0;
+    renderVideoQueue();
+  } catch(e) { console.error('Video load error:', e); }
+}
+
+function populateVideoAccountCheckboxes() {
+  const container = document.getElementById('video-accounts-checkboxes');
+  const videoAccounts = allAccounts.filter(a => VIDEO_PLATFORMS.includes(a.platform));
+  if (!videoAccounts.length) {
+    container.innerHTML = '<span style="color:var(--text-dim)">No video-capable accounts configured</span>';
+    return;
+  }
+  container.innerHTML = videoAccounts.map(a => {
+    const icon = PLATFORM_ICONS[a.platform] || '📄';
+    const clientTag = a.client ? ' <span style="font-size:10px;background:var(--accent-dim);color:var(--accent);padding:1px 6px;border-radius:8px;">client</span>' : '';
+    return `
+      <label class="account-check-label">
+        <input type="checkbox" value="${a.id}">
+        <span>${icon}</span>
+        <span>${escapeHtml(a.name)} - ${escapeHtml(a.handle)}${clientTag}</span>
+      </label>`;
+  }).join('');
+}
+
+function setVideoFilter(filter, btn) {
+  videoFilter = filter;
+  document.querySelectorAll('.filter-bar .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderVideoQueue();
+}
+
+function renderVideoQueue() {
+  const container = document.getElementById('video-queue-list');
+  let videos = allVideos;
+
+  if (videoFilter === 'mic') {
+    videos = videos.filter(v => v.account_ids && v.account_ids.some(id => id.startsWith('mic-')));
+  } else if (videoFilter === 'exponentials') {
+    videos = videos.filter(v => v.account_ids && v.account_ids.some(id => id.startsWith('exponentials-')));
+  }
+
+  if (!videos.length) {
+    container.innerHTML = '<div class="empty-state"><p>No videos found.</p></div>';
+    return;
+  }
+
+  container.innerHTML = videos.map(v => {
+    const accounts = (v.account_ids || []).map(id => {
+      const acc = allAccounts.find(a => a.id === id);
+      return acc ? `${PLATFORM_ICONS[acc.platform] || '?'} ${acc.handle}` : id;
+    }).join(', ');
+
+    const caption = (v.caption || '').substring(0, 60) + ((v.caption || '').length > 60 ? '...' : '');
+    const scheduled = v.scheduled_at ? new Date(v.scheduled_at).toLocaleString() : (v.status === 'draft' ? 'Draft' : 'Immediate');
+
+    const statusColors = {
+      draft: 'badge-draft',
+      scheduled: 'badge-scheduled',
+      posting: 'badge-scheduled',
+      posted: 'badge-posted',
+      failed: 'badge-failed',
+      partial: ''
+    };
+    const badgeClass = statusColors[v.status] || 'badge-draft';
+    const partialStyle = v.status === 'partial' ? 'background:rgba(249,115,22,0.15);color:#f97316' : '';
+
+    // Per-account status tooltip
+    const perStatus = Object.entries(v.per_account_status || {})
+      .map(([id, s]) => `${id}: ${s}`).join(', ');
+
+    return `
+      <div style="display:grid;grid-template-columns:60px 1.5fr 1.2fr 1.5fr 1fr 0.8fr auto;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);align-items:center;transition:background 0.1s;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+        <div style="width:50px;height:38px;background:var(--surface3);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;">🎬</div>
+        <div style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(v.filename)}">${escapeHtml(v.filename)}</div>
+        <div style="font-size:12px;color:var(--text-dim);">${escapeHtml(accounts)}</div>
+        <div style="font-size:12px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(caption) || '-'}</div>
+        <div style="font-size:12px;color:var(--text-dim);">${escapeHtml(scheduled)}</div>
+        <div>
+          <span class="badge ${badgeClass}" style="${partialStyle}" title="${escapeHtml(perStatus)}">${v.status || 'draft'}</span>
+        </div>
+        <div>
+          <button class="btn btn-sm btn-danger" onclick="deleteVideo('${v.id}')">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function handleVideoDrop(event) {
+  event.preventDefault();
+  document.getElementById('video-dropzone').style.borderColor = 'var(--border)';
+  const file = event.dataTransfer.files[0];
+  if (file) setSelectedVideoFile(file);
+}
+
+function handleVideoFileSelect(event) {
+  const file = event.target.files[0];
+  if (file) setSelectedVideoFile(file);
+}
+
+function setSelectedVideoFile(file) {
+  selectedVideoFile = file;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['mp4', 'mov', 'avi'].includes(ext)) {
+    showToast('Unsupported format. Use .mp4, .mov or .avi', 'error');
+    selectedVideoFile = null;
+    return;
+  }
+  const sizeStr = file.size > 1048576
+    ? `${(file.size / 1048576).toFixed(1)} MB`
+    : `${(file.size / 1024).toFixed(0)} KB`;
+  const el = document.getElementById('video-selected-file');
+  el.innerHTML = `<strong>${escapeHtml(file.name)}</strong> <span style="margin-left:8px;">${sizeStr}</span>`;
+  el.style.display = 'block';
+  document.getElementById('video-dropzone').style.borderColor = 'var(--accent)';
+}
+
+function toggleVideoSchedule(radio) {
+  const dt = document.getElementById('video-schedule-datetime');
+  if (radio.value === 'schedule') {
+    dt.style.display = 'block';
+    const d = new Date(Date.now() + 3600000);
+    dt.value = d.toISOString().slice(0, 16);
+  } else {
+    dt.style.display = 'none';
+  }
+}
+
+async function uploadVideo() {
+  if (!selectedVideoFile) {
+    showToast('Select a video file first', 'error');
+    return;
+  }
+
+  const selectedAccounts = [...document.querySelectorAll('#video-accounts-checkboxes input:checked')].map(i => i.value);
+  if (!selectedAccounts.length) {
+    showToast('Select at least one account', 'error');
+    return;
+  }
+
+  const caption = document.getElementById('video-caption').value.trim();
+  const campaign = document.getElementById('video-campaign').value.trim();
+  const scheduleType = document.querySelector('input[name="video-schedule-type"]:checked').value;
+  const scheduledAt = scheduleType === 'schedule'
+    ? new Date(document.getElementById('video-schedule-datetime').value).toISOString()
+    : '';
+
+  const btn = document.getElementById('video-upload-btn');
+  btn.textContent = 'Uploading...';
+  btn.disabled = true;
+
+  try {
+    const formData = new FormData();
+    formData.append('file', selectedVideoFile);
+    formData.append('account_ids', selectedAccounts.join(','));
+    formData.append('caption', caption);
+    formData.append('scheduled_at', scheduledAt);
+    formData.append('campaign', campaign);
+
+    const res = await fetch('/api/videos/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (res.ok) {
+      showToast('Video uploaded and queued!', 'success');
+      // Reset form
+      selectedVideoFile = null;
+      document.getElementById('video-file-input').value = '';
+      document.getElementById('video-selected-file').style.display = 'none';
+      document.getElementById('video-dropzone').style.borderColor = 'var(--border)';
+      document.getElementById('video-caption').value = '';
+      document.getElementById('video-campaign').value = '';
+      await loadVideos();
+    } else {
+      const err = await res.json();
+      showToast(err.detail || 'Upload failed', 'error');
+    }
+  } catch(e) {
+    showToast('Upload failed: ' + e.message, 'error');
+  } finally {
+    btn.textContent = 'Upload & Schedule';
+    btn.disabled = false;
+  }
+}
+
+async function deleteVideo(id) {
+  if (!confirm('Delete this video?')) return;
+  try {
+    const res = await fetch(`/api/videos/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      showToast('Video deleted', 'success');
+      await loadVideos();
+    }
+  } catch(e) {
+    showToast('Delete failed', 'error');
+  }
+}
+
+// Video tab hook - called from switchTab below
+function onVideoTabSwitch() {
+  populateVideoAccountCheckboxes();
+  loadVideos();
+}
+
+// Initial load of video accounts when accounts load
+const origLoadAccounts = loadAccounts;
+async function loadAccounts() {
+  await origLoadAccounts();
+  populateVideoAccountCheckboxes();
+}
+
+// ===== POSTIZ TAB =====
+
+const POSTIZ_PLATFORM_ICONS = {
+  x: '𝕏', twitter: '𝕏', linkedin: 'in', instagram: '📸',
+  tiktok: '♪', facebook: 'f', youtube: '▶', snapchat: '👻',
+  threads: '@', discord: '💬', slack: 'S',
+};
+
+let postizChannels = [];
+let postizSelectedPlatforms = new Set();
+
+async function refreshPostizTab() {
+  await checkPostizStatus();
+  await loadPostizChannels();
+  await loadPostizPosts();
+  loadSheetTemplate();
+  const saved = localStorage.getItem('mannmade_sheet_id');
+  const input = document.getElementById('sheet-id-input');
+  if (saved && input && !input.value) input.value = saved;
+}
+
+async function checkPostizStatus() {
+  const dot = document.getElementById('postiz-dot');
+  const txt = document.getElementById('postiz-status-text');
+  try {
+    const r = await fetch('/api/postiz/status');
+    const d = await r.json();
+    if (d.ok) {
+      dot.style.background = 'var(--green)';
+      txt.textContent = 'Connected - ' + (d.url || 'localhost:5001');
+    } else {
+      dot.style.background = 'var(--red)';
+      txt.textContent = 'Offline - ' + (d.error || 'not reachable');
+    }
+  } catch(e) {
+    dot.style.background = 'var(--red)';
+    txt.textContent = 'Error checking status';
+  }
+}
+
+async function loadPostizChannels() {
+  const grid = document.getElementById('postiz-channels-grid');
+  const picks = document.getElementById('postiz-platform-picks');
+  try {
+    const r = await fetch('/api/postiz/channels');
+    const d = await r.json();
+    postizChannels = d.channels || [];
+    if (postizChannels.length === 0) {
+      grid.innerHTML = '<div style="color:var(--text-dim);font-size:13px;grid-column:1/-1;">No channels connected yet. Click "Connect Account" to link your social accounts in Postiz.</div>';
+      picks.innerHTML = '';
+      return;
+    }
+    grid.innerHTML = postizChannels.map(ch => {
+      const provider = (ch.type || ch.provider || ch.name || '?').toLowerCase();
+      const icon = POSTIZ_PLATFORM_ICONS[provider] || provider[0]?.toUpperCase() || '?';
+      const name = ch.name || ch.username || ch.profile_name || provider;
+      return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;display:flex;align-items:center;gap:10px;">
+        <span style="font-size:18px;width:30px;text-align:center;">${icon}</span>
+        <div>
+          <div style="font-size:13px;font-weight:600;">${name}</div>
+          <div style="font-size:11px;color:var(--text-dim);">${provider}</div>
+        </div>
+        <span style="margin-left:auto;width:8px;height:8px;border-radius:50%;background:var(--green);"></span>
+      </div>`;
+    }).join('');
+
+    // Populate platform picks for quick schedule
+    picks.innerHTML = postizChannels.map(ch => {
+      const id = ch.id || ch._id || '';
+      const provider = (ch.type || ch.provider || ch.name || '?').toLowerCase();
+      const icon = POSTIZ_PLATFORM_ICONS[provider] || '?';
+      const label = ch.name || ch.username || provider;
+      const sel = postizSelectedPlatforms.has(id);
+      return `<button onclick="togglePostizPlatform('${id}', this)" style="background:${sel ? 'var(--accent-dim)' : 'var(--surface2)'};border:1px solid ${sel ? 'var(--accent)' : 'var(--border)'};border-radius:20px;padding:4px 12px;color:var(--text);font-size:12px;cursor:pointer;">
+        ${icon} ${label}
+      </button>`;
+    }).join('');
+  } catch(e) {
+    grid.innerHTML = `<div style="color:var(--red);font-size:13px;">${e.message}</div>`;
+  }
+}
+
+function togglePostizPlatform(id, btn) {
+  if (postizSelectedPlatforms.has(id)) {
+    postizSelectedPlatforms.delete(id);
+    btn.style.background = 'var(--surface2)';
+    btn.style.borderColor = 'var(--border)';
+  } else {
+    postizSelectedPlatforms.add(id);
+    btn.style.background = 'var(--accent-dim)';
+    btn.style.borderColor = 'var(--accent)';
+  }
+}
+
+async function loadPostizPosts() {
+  const status = document.getElementById('postiz-post-status')?.value || 'pending';
+  const list = document.getElementById('postiz-posts-list');
+  try {
+    const r = await fetch(`/api/postiz/posts?status=${status}`);
+    const d = await r.json();
+    const posts = d.posts || [];
+    if (posts.length === 0) {
+      list.innerHTML = `<div style="color:var(--text-dim);font-size:13px;">No ${status} posts found.</div>`;
+      return;
+    }
+    list.innerHTML = posts.map(p => {
+      const ts = p.scheduleDate || p.createdAt || '';
+      const content = (p.content || p.text || '').slice(0, 120);
+      return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;display:flex;gap:12px;align-items:flex-start;">
+        <div style="flex:1;">
+          <div style="font-size:13px;margin-bottom:4px;">${content || '(no content)'}</div>
+          <div style="font-size:11px;color:var(--text-dim);">${ts ? new Date(ts).toLocaleString() : 'No date'}</div>
+        </div>
+        <span style="font-size:11px;padding:3px 8px;border-radius:20px;background:var(--surface3);color:var(--text-dim);">${p.status || status}</span>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = `<div style="color:var(--red);font-size:13px;">Failed to load posts: ${e.message}</div>`;
+  }
+}
+
+async function postizSchedulePost() {
+  const content = document.getElementById('postiz-content').value.trim();
+  const scheduledAt = document.getElementById('postiz-schedule-time').value;
+  const result = document.getElementById('postiz-schedule-result');
+
+  if (!content) { result.innerHTML = '<span style="color:var(--red)">Post content is required.</span>'; return; }
+  if (postizSelectedPlatforms.size === 0) { result.innerHTML = '<span style="color:var(--red)">Select at least one channel above.</span>'; return; }
+
+  result.innerHTML = '<span style="color:var(--text-dim)">Scheduling...</span>';
+  try {
+    const r = await fetch('/api/postiz/schedule', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        content,
+        platforms: [...postizSelectedPlatforms],
+        scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+      }),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      result.innerHTML = '<span style="color:var(--green)">Post scheduled successfully.</span>';
+      document.getElementById('postiz-content').value = '';
+      setTimeout(() => loadPostizPosts(), 500);
+    } else {
+      result.innerHTML = `<span style="color:var(--red)">${d.detail || 'Failed to schedule post.'}</span>`;
+    }
+  } catch(e) {
+    result.innerHTML = `<span style="color:var(--red)">${e.message}</span>`;
+  }
+}
+
+function openPostizApp() {
+  window.open('http://localhost:5001', '_blank');
+}
+
+// ===== SHEET QUEUE =====
+
+async function loadSheetTemplate() {
+  const container = document.getElementById('sheet-template-table');
+  if (!container) return;
+  try {
+    const r = await fetch('/api/sheet/template');
+    const d = await r.json();
+    const cols = d.columns || [];
+    container.innerHTML = `
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);">
+            <th style="text-align:left;padding:6px 10px;color:var(--text-dim);font-weight:600;">Col</th>
+            <th style="text-align:left;padding:6px 10px;color:var(--text-dim);font-weight:600;">Name</th>
+            <th style="text-align:left;padding:6px 10px;color:var(--text-dim);font-weight:600;">Example</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${cols.map(c => `
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:6px 10px;color:var(--accent);font-family:monospace;font-weight:700;">${c.col}</td>
+              <td style="padding:6px 10px;color:var(--text);">${c.name}</td>
+              <td style="padding:6px 10px;color:var(--text-dim);font-family:monospace;">${c.example}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch(e) {
+    if (container) container.innerHTML = '<div style="color:var(--red);font-size:12px;">Could not load template.</div>';
+  }
+}
+
+async function saveSheetId() {
+  const input = document.getElementById('sheet-id-input');
+  const result = document.getElementById('sheet-sync-result');
+  const sheetId = (input ? input.value : '').trim();
+  if (!sheetId) { showSheetResult('Sheet ID is required.', false); return; }
+  // Save to server by calling sync with the id (server will use it)
+  // Also store locally for the UI
+  localStorage.setItem('mannmade_sheet_id', sheetId);
+  showSheetResult('Sheet ID saved. Click "Sync Now" to trigger the first poll.', true);
+  const saveBtn = document.getElementById('sheet-save-btn');
+  if (saveBtn) saveBtn.disabled = true;
+}
+
+async function triggerSheetSync() {
+  const input = document.getElementById('sheet-id-input');
+  const sheetId = (input ? input.value : '').trim() || localStorage.getItem('mannmade_sheet_id') || '';
+  if (!sheetId) { showSheetResult('Paste a Sheet ID first.', false); return; }
+  showSheetResult('Starting sync...', true);
+  try {
+    const r = await fetch('/api/sheet/sync', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({sheet_id: sheetId})
+    });
+    const d = await r.json();
+    if (d.ok) {
+      showSheetResult(`Sync started (PID ${d.pid}). Check logs for progress.`, true);
+    } else {
+      showSheetResult(d.detail || 'Sync failed.', false);
+    }
+  } catch(e) {
+    showSheetResult(e.message, false);
+  }
+}
+
+function showSheetResult(msg, ok) {
+  const el = document.getElementById('sheet-sync-result');
+  if (!el) return;
+  el.style.display = 'block';
+  el.style.color = ok ? 'var(--green)' : 'var(--red)';
+  el.textContent = msg;
+}
+
+// Initialize sheet setup when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  // Pre-fill saved sheet ID
+  const saved = localStorage.getItem('mannmade_sheet_id');
+  const input = document.getElementById('sheet-id-input');
+  if (saved && input) input.value = saved;
+  // Load template on first visit to postiz tab (also called from switchTab)
+  loadSheetTemplate();
+});
+</script>
+</body>
+</html>

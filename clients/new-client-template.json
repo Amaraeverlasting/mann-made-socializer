@@ -1,0 +1,49 @@
+{
+  "id": "new-client-template",
+  "name": "New Client Name",
+  "status": "inactive",
+  "cdp_port": 18803,
+  "sheet_id": "",
+  "content_folder": "/Users/mannai/.openclaw/workspace/assets/clients/new-client-template/inbox/",
+  "platforms": {
+    "x": {
+      "enabled": false,
+      "handle": "",
+      "post_times": ["09:00", "18:00"]
+    },
+    "linkedin": {
+      "enabled": false,
+      "handle": "",
+      "post_times": ["08:00"]
+    },
+    "instagram": {
+      "enabled": false,
+      "handle": "",
+      "post_times": ["10:00"]
+    },
+    "tiktok": {
+      "enabled": false,
+      "handle": "",
+      "post_times": ["17:00"]
+    },
+    "youtube": {
+      "enabled": false,
+      "handle": "",
+      "post_times": ["14:00"]
+    }
+  },
+  "posting": {
+    "frequency": "daily",
+    "max_per_day": 2,
+    "engage": true,
+    "engage_times": ["10:00", "15:00", "19:00"]
+  },
+  "reporting": {
+    "frequency": "weekly",
+    "day": "monday",
+    "time": "08:00",
+    "email": ""
+  },
+  "created_at": "",
+  "notes": ""
+}

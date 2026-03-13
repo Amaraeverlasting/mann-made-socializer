@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mann Made Media - Analytics</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0a0f; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
+
+  header { background: #13131a; border-bottom: 1px solid #2a2a3a; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-size: 18px; font-weight: 700; color: #fff; }
+  .logo span { color: #7c6df0; }
+  .back-btn { background: #2a2a3a; color: #ccc; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; text-decoration: none; }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .stat-card { background: #13131a; border: 1px solid #2a2a3a; border-radius: 12px; padding: 20px; }
+  .stat-value { font-size: 32px; font-weight: 700; color: #7c6df0; margin-bottom: 4px; }
+  .stat-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-delta { font-size: 12px; margin-top: 8px; }
+  .stat-delta.up { color: #4caf7d; }
+  .stat-delta.neutral { color: #888; }
+
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px; }
+  @media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; } }
+
+  .chart-card { background: #13131a; border: 1px solid #2a2a3a; border-radius: 12px; padding: 20px; }
+  .chart-title { font-size: 14px; font-weight: 600; color: #ccc; margin-bottom: 16px; }
+  .chart-wrap { position: relative; height: 200px; }
+
+  .platform-bars { }
+  .platform-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .platform-name { width: 80px; font-size: 12px; color: #aaa; flex-shrink: 0; }
+  .platform-bar-wrap { flex: 1; background: #1e1e2e; border-radius: 4px; height: 24px; overflow: hidden; }
+  .platform-bar { height: 100%; border-radius: 4px; transition: width 0.5s; display: flex; align-items: center; padding-left: 8px; font-size: 11px; font-weight: 600; color: #fff; }
+  .platform-count { width: 40px; text-align: right; font-size: 12px; color: #888; }
+
+  .top-posts { background: #13131a; border: 1px solid #2a2a3a; border-radius: 12px; padding: 20px; }
+  .post-row { border-bottom: 1px solid #1e1e2e; padding: 12px 0; display: flex; gap: 12px; align-items: flex-start; }
+  .post-row:last-child { border-bottom: none; }
+  .post-platform { font-size: 11px; background: #2a2a3a; padding: 2px 8px; border-radius: 20px; color: #aaa; flex-shrink: 0; }
+  .post-content { flex: 1; font-size: 13px; color: #ccc; line-height: 1.4; }
+  .post-date { font-size: 11px; color: #666; flex-shrink: 0; }
+
+  .section-title { font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 16px; }
+
+  .date-range { display: flex; gap: 8px; margin-bottom: 24px; }
+  .range-btn { background: #1e1e2e; border: 1px solid #2a2a3a; color: #888; padding: 6px 14px; border-radius: 20px; cursor: pointer; font-size: 12px; }
+  .range-btn.active { background: #7c6df0; border-color: #7c6df0; color: #fff; }
+
+  .loading { text-align: center; color: #555; padding: 60px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Mann Made <span>Media</span></div>
+  <a href="/" class="back-btn">Back to Platform</a>
+</header>
+
+<div class="container">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+    <h1 style="font-size:22px;font-weight:700;">Analytics</h1>
+    <div class="date-range">
+      <button class="range-btn active" onclick="setRange(7, this)">7 days</button>
+      <button class="range-btn" onclick="setRange(30, this)">30 days</button>
+      <button class="range-btn" onclick="setRange(90, this)">90 days</button>
+    </div>
+  </div>
+
+  <div class="stats-grid" id="statsGrid">
+    <div class="loading">Loading analytics...</div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Posts Over Time</div>
+      <div class="chart-wrap"><canvas id="timelineChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Posts by Platform</div>
+      <div class="platform-bars" id="platformBars">Loading...</div>
+    </div>
+  </div>
+
+  <div class="top-posts">
+    <div class="section-title">Recent Posts</div>
+    <div id="topPosts">Loading...</div>
+  </div>
+</div>
+
+<script>
+const PLATFORM_COLORS = {
+  x: '#fff', linkedin: '#0077b5', instagram: '#e1306c',
+  tiktok: '#ff0050', youtube: '#ff0000', facebook: '#1877f2',
+  snapchat: '#fffc00', unknown: '#555'
+};
+
+let currentDays = 7;
+let timelineChart = null;
+
+async function loadAnalytics(days) {
+  try {
+    const res = await fetch(`/api/analytics?days=${days}`);
+    const data = await res.json();
+    renderStats(data);
+    renderTimeline(data.snapshots);
+    renderPlatformBars(data.latest?.by_platform || {});
+    renderTopPosts(data.latest?.top_posts || []);
+  } catch(e) {
+    document.getElementById('statsGrid').innerHTML = '<div class="loading">Could not load analytics. Is the server running?</div>';
+  }
+}
+
+function renderStats(data) {
+  const latest = data.latest || {};
+  const stats = [
+    { value: latest.posts_total || 0, label: 'Total Posts', delta: `+${data.growth_7d || 0} this week` },
+    { value: latest.posts_today || 0, label: 'Posted Today', delta: '' },
+    { value: latest.posts_this_week || 0, label: 'This Week', delta: '' },
+    { value: latest.queue_total || 0, label: 'In Queue', delta: `${latest.by_status?.scheduled || 0} scheduled` },
+    { value: data.days_tracked || 0, label: 'Days Tracked', delta: '' }
+  ];
+  document.getElementById('statsGrid').innerHTML = stats.map(s => `
+    <div class="stat-card">
+      <div class="stat-value">${s.value}</div>
+      <div class="stat-label">${s.label}</div>
+      ${s.delta ? `<div class="stat-delta up">${s.delta}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function renderTimeline(snapshots) {
+  const ctx = document.getElementById('timelineChart').getContext('2d');
+  const labels = snapshots.map(s => s.date?.slice(5) || '');
+  const data = snapshots.map(s => s.posts_today || 0);
+  if (timelineChart) timelineChart.destroy();
+  timelineChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Posts per day',
+        data,
+        borderColor: '#7c6df0',
+        backgroundColor: 'rgba(124,109,240,0.1)',
+        tension: 0.3,
+        fill: true,
+        pointRadius: 3
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: '#1e1e2e' }, ticks: { color: '#666', maxTicksLimit: 7 } },
+        y: { grid: { color: '#1e1e2e' }, ticks: { color: '#666' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function renderPlatformBars(byPlatform) {
+  const total = Object.values(byPlatform).reduce((a,b) => a+b, 0) || 1;
+  const sorted = Object.entries(byPlatform).sort((a,b) => b[1]-a[1]);
+  document.getElementById('platformBars').innerHTML = sorted.length ? sorted.map(([p, count]) => `
+    <div class="platform-row">
+      <div class="platform-name">${p}</div>
+      <div class="platform-bar-wrap">
+        <div class="platform-bar" style="width:${Math.round(count/total*100)}%;background:${PLATFORM_COLORS[p]||'#555'}">${Math.round(count/total*100)}%</div>
+      </div>
+      <div class="platform-count">${count}</div>
+    </div>
+  `).join('') : '<div style="color:#555;font-size:13px;">No platform data yet</div>';
+}
+
+function renderTopPosts(posts) {
+  document.getElementById('topPosts').innerHTML = posts.length ? posts.reverse().map(p => `
+    <div class="post-row">
+      <span class="post-platform">${p.platform}</span>
+      <div class="post-content">${p.content || '(no content)'}</div>
+      <div class="post-date">${p.date || ''}</div>
+    </div>
+  `).join('') : '<div style="color:#555;font-size:13px;padding:16px 0;">No posts recorded yet</div>';
+}
+
+function setRange(days, btn) {
+  currentDays = days;
+  document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadAnalytics(days);
+}
+
+loadAnalytics(currentDays);
+setInterval(() => loadAnalytics(currentDays), 60000);
+</script>
+</body>
+</html>

@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clients - Mann Made Socializer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1a1a24;
+    --surface3: #22222f;
+    --accent: #7c6df0;
+    --accent-dim: rgba(124,109,240,0.15);
+    --text: #e8e8f0;
+    --text-dim: #8888aa;
+    --border: #2a2a3a;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --blue: #3b82f6;
+    --radius: 10px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
+  .logo-icon { width: 34px; height: 34px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .logo-text h1 { font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.1; }
+  .logo-text span { font-size: 11px; color: var(--text-dim); }
+
+  nav { display: flex; gap: 4px; flex: 1; }
+  .nav-tab { padding: 6px 16px; border-radius: 7px; border: none; background: transparent; color: var(--text-dim); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; text-decoration: none; display: inline-flex; align-items: center; }
+  .nav-tab:hover { background: var(--surface2); color: var(--text); }
+  .nav-tab.active { background: var(--accent-dim); color: var(--accent); }
+
+  main { max-width: 1280px; margin: 0 auto; padding: 24px; }
+
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .page-title { font-size: 22px; font-weight: 700; }
+  .page-subtitle { color: var(--text-dim); font-size: 13px; margin-top: 3px; }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; border: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; text-decoration: none; white-space: nowrap; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #6b5ce0; }
+  .btn-ghost { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+  .btn-danger { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+  .btn-danger:hover { background: rgba(239,68,68,0.25); }
+  .btn-success { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+  .btn-success:hover { background: rgba(34,197,94,0.25); }
+  .btn-sm { padding: 4px 10px; font-size: 12px; border-radius: 6px; }
+  .btn-xs { padding: 3px 8px; font-size: 11px; border-radius: 5px; }
+
+  /* STATS BAR */
+  .stats-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; text-align: center; }
+  .stat-card .val { font-size: 28px; font-weight: 700; color: var(--accent); line-height: 1; margin-bottom: 4px; }
+  .stat-card .val.green { color: var(--green); }
+  .stat-card .val.red { color: var(--red); }
+  .stat-card .val.yellow { color: var(--yellow); }
+  .stat-card .lbl { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* CLIENT CARDS */
+  .clients-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px; margin-bottom: 32px; }
+
+  .client-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .client-card:hover { border-color: var(--accent); background: var(--surface2); transform: translateY(-1px); }
+  .client-card.status-active::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--green); }
+  .client-card.status-paused::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--yellow); }
+  .client-card.status-setup::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--text-dim); }
+  .client-card.status-error::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--red); }
+
+  .card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+  .client-name { font-size: 16px; font-weight: 700; }
+  .client-meta { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+  .status-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+  .status-badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .status-active { background: rgba(34,197,94,0.15); color: var(--green); }
+  .status-paused { background: rgba(245,158,11,0.15); color: var(--yellow); }
+  .status-setup { background: rgba(136,136,170,0.15); color: var(--text-dim); }
+  .status-error { background: rgba(239,68,68,0.15); color: var(--red); }
+  .status-inactive { background: rgba(136,136,170,0.15); color: var(--text-dim); }
+
+  .card-platforms { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .platform-chip { font-size: 13px; padding: 3px 8px; border-radius: 8px; border: 1px solid var(--border); color: var(--text-dim); display: flex; align-items: center; gap: 3px; }
+  .platform-chip.on { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .platform-chip.off { opacity: 0.4; }
+
+  .card-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .card-stat-item .cs-val { font-size: 18px; font-weight: 700; }
+  .card-stat-item .cs-lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; }
+
+  .card-actions { display: flex; gap: 6px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+
+  /* ADD CLIENT WIZARD */
+  .wizard-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .wizard-overlay.open { opacity: 1; pointer-events: all; }
+  .wizard { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; transform: translateY(20px); transition: transform 0.2s; }
+  .wizard-overlay.open .wizard { transform: translateY(0); }
+  .wizard-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--border); }
+  .wizard-header h2 { font-size: 18px; font-weight: 600; }
+  .wizard-close { background: var(--surface2); border: none; color: var(--text-dim); width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+
+  .wizard-progress { display: flex; gap: 0; padding: 16px 24px; border-bottom: 1px solid var(--border); }
+  .wizard-step-dot { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; }
+  .wizard-step-dot::after { content: ''; position: absolute; top: 10px; left: 60%; width: 80%; height: 2px; background: var(--border); z-index: 0; }
+  .wizard-step-dot:last-child::after { display: none; }
+  .dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); background: var(--bg); font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; color: var(--text-dim); position: relative; z-index: 1; }
+  .dot.active { border-color: var(--accent); background: var(--accent); color: #fff; }
+  .dot.done { border-color: var(--green); background: var(--green); color: #fff; }
+  .dot-label { font-size: 10px; color: var(--text-dim); text-align: center; margin-top: 2px; }
+  .dot-label.active { color: var(--accent); }
+
+  .wizard-body { padding: 24px; }
+  .wizard-footer { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-top: 1px solid var(--border); }
+  .step-panel { display: none; }
+  .step-panel.active { display: block; }
+
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .form-hint { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+  input[type="text"], input[type="number"], input[type="email"], input[type="time"], textarea, select {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-size: 13px; padding: 8px 12px; font-family: inherit; transition: border-color 0.15s;
+  }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  .platform-picker { display: flex; flex-direction: column; gap: 10px; }
+  .platform-row { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; display: grid; grid-template-columns: 28px 1fr 1fr auto; gap: 10px; align-items: center; transition: border-color 0.15s; }
+  .platform-row.on { border-color: var(--accent); background: var(--accent-dim); }
+  .platform-toggle-cb { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+  .platform-name { font-size: 13px; font-weight: 500; }
+  .platform-handle-input { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 12px; padding: 4px 8px; }
+  .platform-handle-input:focus { outline: none; border-color: var(--accent); }
+
+  .review-block { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+  .review-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+  .review-label { color: var(--text-dim); }
+  .review-value { font-weight: 500; }
+
+  /* CLIENT DETAIL PANEL */
+  .detail-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 500; display: flex; align-items: stretch; justify-content: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .detail-overlay.open { opacity: 1; pointer-events: all; }
+  .detail-panel { background: var(--surface); border-left: 1px solid var(--border); width: 100%; max-width: 800px; height: 100vh; overflow-y: auto; transform: translateX(40px); transition: transform 0.2s; display: flex; flex-direction: column; }
+  .detail-overlay.open .detail-panel { transform: translateX(0); }
+
+  .detail-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 10; }
+  .detail-title { font-size: 20px; font-weight: 700; }
+  .detail-header-actions { display: flex; gap: 8px; align-items: center; }
+
+  .detail-tabs { display: flex; gap: 2px; padding: 0 24px; border-bottom: 1px solid var(--border); }
+  .detail-tab { padding: 12px 16px; font-size: 13px; font-weight: 500; color: var(--text-dim); border: none; background: transparent; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+  .detail-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .detail-tab:hover:not(.active) { color: var(--text); }
+
+  .detail-body { flex: 1; padding: 24px; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .info-item label { display: block; font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .info-item span { font-size: 13px; }
+  .info-item.full { grid-column: span 2; }
+
+  .edit-form-group { margin-bottom: 14px; }
+  .edit-form-group label { display: block; font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; margin-bottom: 5px; }
+
+  /* PLATFORM STATUS TABLE */
+  .platform-status-table { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .pst-row { display: grid; grid-template-columns: 40px 1fr 1fr 100px 80px; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); align-items: center; }
+  .pst-row:last-child { border-bottom: none; }
+  .pst-header { background: var(--surface2); font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; }
+  .pst-icon { font-size: 18px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+  .status-dot.green { background: var(--green); }
+  .status-dot.red { background: var(--red); }
+  .status-dot.grey { background: var(--text-dim); }
+
+  /* QUEUE TABLE */
+  .queue-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .queue-table { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .queue-row { display: grid; grid-template-columns: 1fr 120px 100px 80px 80px; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); align-items: center; font-size: 13px; }
+  .queue-row:last-child { border-bottom: none; }
+  .queue-row-header { background: var(--surface2); font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; }
+  .queue-filename { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .queue-caption { font-size: 11px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .q-status-pending { color: var(--yellow); }
+  .q-status-posted { color: var(--green); }
+  .q-status-failed { color: var(--red); }
+
+  /* ANALYTICS */
+  .analytics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .analytics-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; }
+  .analytics-card .av { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+  .analytics-card .al { font-size: 11px; color: var(--text-dim); text-transform: uppercase; }
+  .platform-bar-chart { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .platform-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .platform-bar-row:last-child { margin-bottom: 0; }
+  .bar-label { font-size: 12px; width: 80px; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.5s; }
+  .bar-count { font-size: 12px; color: var(--text-dim); width: 30px; text-align: right; flex-shrink: 0; }
+
+  /* SETTINGS TAB */
+  .settings-section { margin-bottom: 24px; }
+  .settings-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-label { font-size: 13px; }
+  .toggle-desc { font-size: 11px; color: var(--text-dim); }
+
+  /* TOAST */
+  .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+  .toast { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; font-size: 13px; animation: slideIn 0.2s ease; max-width: 320px; }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error { border-color: var(--red); color: var(--red); }
+  .toast.info { border-color: var(--blue); color: var(--blue); }
+  @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  .empty-state { padding: 40px; text-align: center; color: var(--text-dim); }
+  .empty-state p { margin-bottom: 12px; }
+
+  .loading { display: flex; align-items: center; gap: 8px; color: var(--text-dim); font-size: 13px; }
+  .spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media (max-width: 768px) {
+    .stats-bar { grid-template-columns: repeat(3, 1fr); }
+    .clients-grid { grid-template-columns: 1fr; }
+    .queue-row { grid-template-columns: 1fr 80px 60px; }
+    .queue-row > :nth-child(4), .queue-row > :nth-child(5) { display: none; }
+    .pst-row { grid-template-columns: 30px 1fr 1fr 80px; }
+    .pst-row > :nth-child(5) { display: none; }
+    .analytics-grid { grid-template-columns: repeat(2, 1fr); }
+    .detail-panel { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="logo">
+    <div class="logo-icon">📡</div>
+    <div class="logo-text">
+      <h1>Mann Made Socializer</h1>
+      <span>Socializer</span>
+    </div>
+  </a>
+  <nav>
+    <a href="/" class="nav-tab">📅 Calendar</a>
+    <a href="/" class="nav-tab">📝 Posts</a>
+    <a href="/" class="nav-tab">👤 Accounts</a>
+    <a href="/" class="nav-tab">📊 Analytics</a>
+    <a href="/" class="nav-tab">🗂 Templates</a>
+    <a href="/" class="nav-tab">🎬 Videos</a>
+    <a href="/clients" class="nav-tab active">🏢 Clients</a>
+  </nav>
+</header>
+
+<main>
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div>
+      <div class="page-title">Client Management</div>
+      <div class="page-subtitle">Manage brand accounts, content queues, and reporting</div>
+    </div>
+    <button class="btn btn-primary" onclick="openWizard()">+ Add New Client</button>
+  </div>
+
+  <!-- STATS BAR -->
+  <div class="stats-bar">
+    <div class="stat-card"><div class="val" id="s-total">-</div><div class="lbl">Total Clients</div></div>
+    <div class="stat-card"><div class="val green" id="s-active">-</div><div class="lbl">Active</div></div>
+    <div class="stat-card"><div class="val yellow" id="s-paused">-</div><div class="lbl">Paused</div></div>
+    <div class="stat-card"><div class="val" id="s-posts">-</div><div class="lbl">Posts This Week</div></div>
+    <div class="stat-card"><div class="val red" id="s-errors">-</div><div class="lbl">Errors</div></div>
+  </div>
+
+  <!-- CLIENT CARDS -->
+  <div class="clients-grid" id="clients-grid">
+    <div class="empty-state" style="grid-column:1/-1"><div class="loading"><div class="spinner"></div>Loading clients...</div></div>
+  </div>
+</main>
+
+<!-- ADD CLIENT WIZARD -->
+<div class="wizard-overlay" id="wizard-overlay">
+  <div class="wizard">
+    <div class="wizard-header">
+      <h2>Add New Client</h2>
+      <button class="wizard-close" onclick="closeWizard()">x</button>
+    </div>
+
+    <div class="wizard-progress" id="wizard-progress">
+      <!-- Steps populated by JS -->
+    </div>
+
+    <div class="wizard-body" id="wizard-body">
+
+      <!-- Step 1: Basic Info -->
+      <div class="step-panel active" id="step-1">
+        <div class="form-group">
+          <label class="form-label">Client Name *</label>
+          <input type="text" id="w-name" placeholder="e.g. SUSA Summit" oninput="wizardAutoId()">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Client ID (slug) *</label>
+            <input type="text" id="w-id" placeholder="e.g. susa-summit">
+            <div class="form-hint">Lowercase, hyphens only. Auto-filled from name.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contact Email</label>
+            <input type="email" id="w-email" placeholder="client@example.com">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes / Brand Voice</label>
+          <textarea id="w-notes" rows="3" placeholder="Brand voice, topics, special instructions..."></textarea>
+        </div>
+      </div>
+
+      <!-- Step 2: Platforms -->
+      <div class="step-panel" id="step-2">
+        <div class="form-group">
+          <label class="form-label">Select Platforms and Handles</label>
+          <div class="platform-picker" id="platform-picker">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Chrome Port -->
+      <div class="step-panel" id="step-3">
+        <div class="form-group">
+          <label class="form-label">Chrome CDP Port *</label>
+          <input type="number" id="w-port" placeholder="18803" min="18800" max="19999">
+          <div class="form-hint">Each client needs a unique Chrome port for browser automation. Next available port has been auto-assigned.</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:13px;">
+          <strong>How to start Chrome on this port:</strong><br>
+          <code style="font-family:monospace;font-size:12px;color:var(--accent);display:block;margin-top:8px;word-break:break-all;">/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=<span id="port-preview">18803</span> --user-data-dir=/tmp/chrome-<span id="port-dir-preview">client-id</span></code>
+        </div>
+      </div>
+
+      <!-- Step 4: Content Source -->
+      <div class="step-panel" id="step-4">
+        <div class="form-group">
+          <label class="form-label">Content Folder (inbox)</label>
+          <input type="text" id="w-folder" placeholder="/Users/mannai/.openclaw/workspace/assets/clients/slug/inbox/">
+          <div class="form-hint">Files dropped here get scanned into the content queue. Leave empty to use default path.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Google Sheet ID (optional)</label>
+          <input type="text" id="w-sheet" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms">
+          <div class="form-hint">Sheet ID from the Google Sheets URL. Used to pull content schedule.</div>
+        </div>
+      </div>
+
+      <!-- Step 5: Posting Schedule -->
+      <div class="step-panel" id="step-5">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Posting Frequency</label>
+            <select id="w-frequency">
+              <option value="daily">Daily</option>
+              <option value="weekdays">Weekdays only</option>
+              <option value="weekly">Weekly</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Max Posts Per Day</label>
+            <input type="number" id="w-maxperday" value="2" min="1" max="10">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Engagement</label>
+          <select id="w-engage">
+            <option value="true">Enabled (auto-like/comment)</option>
+            <option value="false">Disabled</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Report Schedule</label>
+          <div class="form-row">
+            <select id="w-report-day">
+              <option value="monday">Monday</option>
+              <option value="tuesday">Tuesday</option>
+              <option value="wednesday">Wednesday</option>
+              <option value="friday">Friday</option>
+              <option value="sunday">Sunday</option>
+            </select>
+            <input type="time" id="w-report-time" value="08:00">
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 6: Review + Create -->
+      <div class="step-panel" id="step-6">
+        <div style="margin-bottom:16px;font-size:13px;color:var(--text-dim);">Review your client config before creating.</div>
+        <div id="wizard-review"></div>
+      </div>
+    </div>
+
+    <div class="wizard-footer">
+      <button class="btn btn-ghost" id="btn-back" onclick="wizardBack()" style="display:none">Back</button>
+      <div style="font-size:12px;color:var(--text-dim)" id="wizard-step-label">Step 1 of 6</div>
+      <button class="btn btn-primary" id="btn-next" onclick="wizardNext()">Next</button>
+    </div>
+  </div>
+</div>
+
+<!-- CLIENT DETAIL PANEL -->
+<div class="detail-overlay" id="detail-overlay">
+  <div class="detail-panel" id="detail-panel">
+    <div class="detail-header">
+      <div>
+        <div class="detail-title" id="detail-title">Client</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:2px;" id="detail-subtitle"></div>
+      </div>
+      <div class="detail-header-actions">
+        <button class="btn btn-sm btn-ghost" id="detail-pause-btn" onclick="toggleClientPause()">Pause</button>
+        <button class="btn btn-sm btn-ghost" onclick="closeDetail()">Close</button>
+      </div>
+    </div>
+    <div class="detail-tabs">
+      <button class="detail-tab active" onclick="showDetailTab('profile')">Profile</button>
+      <button class="detail-tab" onclick="showDetailTab('accounts')">Accounts</button>
+      <button class="detail-tab" onclick="showDetailTab('queue')">Content Queue</button>
+      <button class="detail-tab" onclick="showDetailTab('analytics')">Analytics</button>
+      <button class="detail-tab" onclick="showDetailTab('settings')">Settings</button>
+    </div>
+    <div class="detail-body" id="detail-body">
+      <div class="tab-content active" id="tab-profile"></div>
+      <div class="tab-content" id="tab-accounts"></div>
+      <div class="tab-content" id="tab-queue"></div>
+      <div class="tab-content" id="tab-analytics"></div>
+      <div class="tab-content" id="tab-settings"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+const PLATFORM_INFO = {
+  x:         { icon: '🐦', label: 'X (Twitter)' },
+  linkedin:  { icon: '💼', label: 'LinkedIn' },
+  instagram: { icon: '📷', label: 'Instagram' },
+  tiktok:    { icon: '🎵', label: 'TikTok' },
+  youtube:   { icon: '▶', label: 'YouTube' },
+};
+
+let clients = [];
+let currentClient = null;
+let currentDetailTab = 'profile';
+let wizardStep = 1;
+const WIZARD_STEPS = ['Basic Info', 'Platforms', 'Chrome Port', 'Content Source', 'Schedule', 'Review'];
+
+// ===== LOAD CLIENTS =====
+async function loadClients() {
+  try {
+    const res = await fetch('/api/clients');
+    clients = await res.json();
+    renderStats();
+    renderCards();
+  } catch(e) {
+    document.getElementById('clients-grid').innerHTML =
+      '<div class="empty-state" style="grid-column:1/-1"><p>Failed to load clients. Is the server running?</p></div>';
+  }
+}
+
+function renderStats() {
+  const active = clients.filter(c => c.status === 'active').length;
+  const paused = clients.filter(c => c.status === 'paused').length;
+  document.getElementById('s-total').textContent = clients.length;
+  document.getElementById('s-active').textContent = active;
+  document.getElementById('s-paused').textContent = paused;
+  // Posts this week + errors - fetch from analytics (simplified: just show queued)
+  let totalPending = 0, totalErrors = 0;
+  // We'll update these when analytics load; for now show -
+  document.getElementById('s-posts').textContent = '-';
+  document.getElementById('s-errors').textContent = '-';
+}
+
+function renderCards() {
+  const grid = document.getElementById('clients-grid');
+  if (!clients.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <p>No clients configured yet.</p>
+      <button class="btn btn-primary" onclick="openWizard()">+ Add First Client</button>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = clients.map(c => {
+    const statusClass = `status-${c.status || 'setup'}`;
+    const enabledPlatforms = Object.entries(c.platforms || {}).filter(([,v]) => v.enabled);
+    const disabledPlatforms = Object.entries(c.platforms || {}).filter(([,v]) => !v.enabled);
+
+    const platformChips = enabledPlatforms.map(([p]) =>
+      `<span class="platform-chip on" title="${PLATFORM_INFO[p]?.label || p}">${PLATFORM_INFO[p]?.icon || p} ${PLATFORM_INFO[p]?.label || p}</span>`
+    ).join('');
+
+    const queueCount = '-';
+    const postCount = '-';
+
+    return `
+      <div class="client-card ${statusClass}" onclick="openDetail('${c.id}')">
+        <div class="card-header">
+          <div>
+            <div class="client-name">${escapeHtml(c.name)}</div>
+            <div class="client-meta">Port ${c.cdp_port} &bull; ${c.id}</div>
+          </div>
+          <span class="status-badge status-${c.status || 'setup'}">${c.status || 'setup'}</span>
+        </div>
+        <div class="card-platforms">${platformChips || '<span style="font-size:12px;color:var(--text-dim)">No platforms enabled</span>'}</div>
+        ${c.notes ? `<div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">${escapeHtml(c.notes.substring(0,100))}${c.notes.length > 100 ? '...' : ''}</div>` : ''}
+        <div class="card-stats">
+          <div class="card-stat-item">
+            <div class="cs-val" id="cs-queue-${c.id}">-</div>
+            <div class="cs-lbl">In Queue</div>
+          </div>
+          <div class="card-stat-item">
+            <div class="cs-val" id="cs-posted-${c.id}">-</div>
+            <div class="cs-lbl">Posted</div>
+          </div>
+          <div class="card-stat-item">
+            <div class="cs-val" id="cs-failed-${c.id}" style="color:var(--red)">-</div>
+            <div class="cs-lbl">Failed</div>
+          </div>
+        </div>
+        <div class="card-actions" onclick="event.stopPropagation()">
+          <button class="btn btn-ghost btn-sm" onclick="openDetail('${c.id}')">View</button>
+          <button class="btn btn-ghost btn-sm" onclick="scanInbox('${c.id}')">Scan Inbox</button>
+          <button class="btn btn-ghost btn-sm" onclick="openDetail('${c.id}');showDetailTab('queue')">Queue</button>
+          ${c.status === 'active'
+            ? `<button class="btn btn-sm" style="background:rgba(245,158,11,0.15);color:var(--yellow);border:1px solid rgba(245,158,11,0.3)" onclick="quickPause('${c.id}')">Pause</button>`
+            : `<button class="btn btn-sm btn-success" onclick="quickResume('${c.id}')">Resume</button>`
+          }
+        </div>
+      </div>`;
+  }).join('');
+
+  // Load analytics for each client card
+  clients.forEach(c => loadCardAnalytics(c.id));
+}
+
+async function loadCardAnalytics(clientId) {
+  try {
+    const res = await fetch(`/api/clients/${clientId}/analytics`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const qEl = document.getElementById(`cs-queue-${clientId}`);
+    const pEl = document.getElementById(`cs-posted-${clientId}`);
+    const fEl = document.getElementById(`cs-failed-${clientId}`);
+    if (qEl) qEl.textContent = data.pending ?? '-';
+    if (pEl) pEl.textContent = data.posted ?? '-';
+    if (fEl) fEl.textContent = data.failed ?? '-';
+  } catch(e) {}
+}
+
+// ===== CLIENT DETAIL =====
+async function openDetail(clientId) {
+  currentClient = clients.find(c => c.id === clientId);
+  if (!currentClient) return;
+  document.getElementById('detail-title').textContent = currentClient.name;
+  document.getElementById('detail-subtitle').textContent = `ID: ${currentClient.id} | Port: ${currentClient.cdp_port}`;
+  const pauseBtn = document.getElementById('detail-pause-btn');
+  pauseBtn.textContent = currentClient.status === 'active' ? 'Pause Client' : 'Resume Client';
+  pauseBtn.className = `btn btn-sm ${currentClient.status === 'active' ? 'btn-ghost' : 'btn-success'}`;
+
+  // Reset tabs
+  document.querySelectorAll('.detail-tab').forEach((t, i) => {
+    t.classList.toggle('active', i === 0);
+  });
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+
+  showDetailTab('profile', true);
+  document.getElementById('detail-overlay').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detail-overlay').classList.remove('open');
+  currentClient = null;
+}
+
+function showDetailTab(tab, force=false) {
+  if (currentDetailTab === tab && !force) return;
+  currentDetailTab = tab;
+  document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  // Find tab button
+  const tabs = ['profile','accounts','queue','analytics','settings'];
+  const idx = tabs.indexOf(tab);
+  if (idx >= 0) document.querySelectorAll('.detail-tab')[idx]?.classList.add('active');
+  document.getElementById(`tab-${tab}`)?.classList.add('active');
+  // Render content
+  switch(tab) {
+    case 'profile': renderProfileTab(); break;
+    case 'accounts': renderAccountsTab(); break;
+    case 'queue': renderQueueTab(); break;
+    case 'analytics': renderAnalyticsTab(); break;
+    case 'settings': renderSettingsTab(); break;
+  }
+}
+
+function renderProfileTab() {
+  const c = currentClient;
+  document.getElementById('tab-profile').innerHTML = `
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:16px;">Client Profile</h3>
+    <div class="info-grid">
+      <div class="info-item"><label>Client Name</label><input type="text" value="${escapeAttr(c.name)}" id="edit-name" /></div>
+      <div class="info-item"><label>Status</label><select id="edit-status">
+        <option value="active" ${c.status==='active'?'selected':''}>Active</option>
+        <option value="paused" ${c.status==='paused'?'selected':''}>Paused</option>
+        <option value="setup" ${c.status==='setup'?'selected':''}>Setup</option>
+        <option value="inactive" ${c.status==='inactive'?'selected':''}>Inactive</option>
+      </select></div>
+      <div class="info-item full"><label>Contact Email</label><input type="email" value="${escapeAttr(c.reporting?.email||'')}" id="edit-email" /></div>
+      <div class="info-item full"><label>Content Folder</label><input type="text" value="${escapeAttr(c.content_folder||'')}" id="edit-folder" /></div>
+      <div class="info-item full"><label>Google Sheet ID</label><input type="text" value="${escapeAttr(c.sheet_id||'')}" id="edit-sheet" /></div>
+      <div class="info-item full"><label>Notes</label><textarea id="edit-notes" rows="3">${escapeHtml(c.notes||'')}</textarea></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button class="btn btn-primary btn-sm" onclick="saveProfile()">Save Changes</button>
+      <button class="btn btn-ghost btn-sm" onclick="onboardClient()">Run Onboard Script</button>
+    </div>
+    <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
+      <div style="font-size:12px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Created</div>
+      <div style="font-size:13px;">${c.created_at ? new Date(c.created_at).toLocaleDateString() : '-'}</div>
+    </div>
+  `;
+}
+
+async function saveProfile() {
+  const c = currentClient;
+  const updated = {
+    ...c,
+    name: document.getElementById('edit-name').value.trim(),
+    status: document.getElementById('edit-status').value,
+    content_folder: document.getElementById('edit-folder').value.trim(),
+    sheet_id: document.getElementById('edit-sheet').value.trim(),
+    notes: document.getElementById('edit-notes').value.trim(),
+    reporting: { ...c.reporting, email: document.getElementById('edit-email').value.trim() },
+  };
+  try {
+    const res = await fetch(`/api/clients/${c.id}`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(updated)
+    });
+    if (res.ok) {
+      const saved = await res.json();
+      currentClient = saved;
+      clients = clients.map(x => x.id === c.id ? saved : x);
+      renderCards();
+      showToast('Profile saved', 'success');
+    } else {
+      const err = await res.json();
+      showToast(err.detail || 'Save failed', 'error');
+    }
+  } catch(e) { showToast('Save failed: ' + e.message, 'error'); }
+}
+
+async function onboardClient() {
+  showToast('Running onboard script...', 'info');
+  try {
+    const res = await fetch(`/api/clients/${currentClient.id}/onboard`, { method: 'POST' });
+    const data = await res.json();
+    if (data.ok) {
+      showToast('Onboard script completed', 'success');
+    } else {
+      showToast('Script error: ' + (data.stderr || data.error || 'unknown'), 'error');
+    }
+  } catch(e) { showToast('Request failed: ' + e.message, 'error'); }
+}
+
+async function renderAccountsTab() {
+  const tab = document.getElementById('tab-accounts');
+  tab.innerHTML = `<div class="loading"><div class="spinner"></div> Checking status...</div>`;
+
+  let statusData = null;
+  try {
+    const res = await fetch(`/api/clients/${currentClient.id}/status`);
+    statusData = await res.json();
+  } catch(e) {}
+
+  const c = currentClient;
+  const platforms = c.platforms || {};
+  const allPlatforms = Object.keys(PLATFORM_INFO);
+
+  tab.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h3 style="font-size:14px;font-weight:600;">Platform Accounts</h3>
+      <div style="font-size:12px;color:var(--text-dim);">CDP Port: <strong>${c.cdp_port}</strong>
+        ${statusData ? (statusData.cdp_reachable ? '<span style="color:var(--green);margin-left:6px;">Connected</span>' : '<span style="color:var(--red);margin-left:6px;">Not reachable</span>') : ''}
+      </div>
+    </div>
+    <div class="platform-status-table">
+      <div class="pst-row pst-header">
+        <div></div>
+        <div>Platform</div>
+        <div>Handle</div>
+        <div>Login Status</div>
+        <div>Last Checked</div>
+      </div>
+      ${allPlatforms.map(p => {
+        const pdata = platforms[p] || {};
+        const info = PLATFORM_INFO[p];
+        const ps = statusData?.platforms?.[p] || {};
+        const loginStatus = ps.logged_in === true ? '<span class="status-dot green"></span>Logged in' :
+                            ps.logged_in === false ? '<span class="status-dot red"></span>Not logged in' :
+                            '<span class="status-dot grey"></span>Unknown';
+        const lastChecked = ps.last_checked ? new Date(ps.last_checked).toLocaleString() : '-';
+        return `<div class="pst-row ${!pdata.enabled ? 'opacity: 0.5' : ''}">
+          <div class="pst-icon">${info.icon}</div>
+          <div>
+            <div style="font-size:13px;font-weight:500;">${info.label}</div>
+            <div style="font-size:11px;color:var(--text-dim);">${pdata.enabled ? 'Enabled' : 'Disabled'}</div>
+          </div>
+          <div style="font-size:13px;">${escapeHtml(pdata.handle || '-')}</div>
+          <div style="font-size:12px;">${loginStatus}</div>
+          <div style="font-size:11px;color:var(--text-dim);">${lastChecked}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="margin-top:14px;display:flex;gap:8px;">
+      <button class="btn btn-ghost btn-sm" onclick="checkLoginStatus()">Check Login Status</button>
+    </div>
+  `;
+}
+
+async function checkLoginStatus() {
+  showToast('Checking login status... (requires Chrome on CDP port)', 'info');
+  // Re-render to show fresh data
+  setTimeout(() => renderAccountsTab(), 1000);
+}
+
+async function renderQueueTab() {
+  const tab = document.getElementById('tab-queue');
+  tab.innerHTML = `<div class="loading"><div class="spinner"></div> Loading queue...</div>`;
+
+  let data = { items: [], count: 0 };
+  try {
+    const res = await fetch(`/api/clients/${currentClient.id}/queue/items`);
+    data = await res.json();
+  } catch(e) {}
+
+  const items = data.items || [];
+
+  tab.innerHTML = `
+    <div class="queue-header">
+      <h3 style="font-size:14px;font-weight:600;">Content Queue (${items.length} items)</h3>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="scanInboxDetail()">Scan Inbox</button>
+        <button class="btn btn-primary btn-sm" onclick="showAddQueueItem()">+ Add Item</button>
+      </div>
+    </div>
+    <div id="add-queue-form" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;">
+      <div class="form-group">
+        <label class="form-label">Filename</label>
+        <input type="text" id="qi-filename" placeholder="video.mp4 or post.jpg">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Caption</label>
+        <textarea id="qi-caption" rows="3" placeholder="Post caption text..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Platforms</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;" id="qi-platforms">
+          ${Object.entries(currentClient.platforms||{}).filter(([,v])=>v.enabled).map(([p]) =>
+            `<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;">
+              <input type="checkbox" value="${p}" checked> ${PLATFORM_INFO[p]?.icon||p} ${PLATFORM_INFO[p]?.label||p}
+            </label>`
+          ).join('')}
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Scheduled Time</label>
+        <input type="datetime-local" id="qi-scheduled">
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary btn-sm" onclick="addQueueItem()">Add to Queue</button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('add-queue-form').style.display='none'">Cancel</button>
+      </div>
+    </div>
+    ${items.length === 0 ? `
+      <div class="empty-state">
+        <p>No items in queue.</p>
+        <p style="font-size:12px;">Drop files into the inbox folder and click "Scan Inbox" to auto-import them.</p>
+        <p style="font-size:12px;margin-top:8px;">Inbox: <code style="color:var(--accent);font-size:11px;">${escapeHtml(currentClient.content_folder||'Not configured')}</code></p>
+      </div>
+    ` : `
+      <div class="queue-table">
+        <div class="queue-row queue-row-header">
+          <div>File / Caption</div>
+          <div>Platforms</div>
+          <div>Scheduled</div>
+          <div>Status</div>
+          <div>Actions</div>
+        </div>
+        ${items.map(item => {
+          const platforms = (item.platforms||[]).map(p => PLATFORM_INFO[p]?.icon||p).join(' ');
+          const scheduled = item.scheduled ? new Date(item.scheduled).toLocaleDateString() : '-';
+          const statusClass = `q-status-${item.status||'pending'}`;
+          return `<div class="queue-row">
+            <div>
+              <div class="queue-filename">${escapeHtml(item.filename||'-')}</div>
+              <div class="queue-caption">${escapeHtml(item.caption||'No caption')}</div>
+            </div>
+            <div style="font-size:14px;">${platforms}</div>
+            <div style="font-size:12px;">${scheduled}</div>
+            <div class="${statusClass}" style="font-size:12px;font-weight:600;">${item.status||'pending'}</div>
+            <div>
+              <button class="btn btn-xs btn-danger" onclick="deleteQueueItem('${item.id}')">Del</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    `}
+  `;
+}
+
+function showAddQueueItem() {
+  const form = document.getElementById('add-queue-form');
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+async function addQueueItem() {
+  const filename = document.getElementById('qi-filename').value.trim();
+  const caption = document.getElementById('qi-caption').value.trim();
+  const platforms = [...document.querySelectorAll('#qi-platforms input:checked')].map(i => i.value);
+  const scheduled = document.getElementById('qi-scheduled').value;
+
+  if (!filename) { showToast('Filename is required', 'error'); return; }
+
+  try {
+    const res = await fetch(`/api/clients/${currentClient.id}/queue/items`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename, caption, platforms, scheduled })
+    });
+    if (res.ok) {
+      showToast('Item added to queue', 'success');
+      renderQueueTab();
+    } else {
+      const err = await res.json();
+      showToast(err.detail || 'Failed to add item', 'error');
+    }
+  } catch(e) { showToast('Request failed: ' + e.message, 'error'); }
+}
+
+async function deleteQueueItem(itemId) {
+  if (!confirm('Remove this item from the queue?')) return;
+  try {
+    const res = await fetch(`/api/clients/${currentClient.id}/queue/items/${itemId}`, { method: 'DELETE' });
+    if (res.ok) {
+      showToast('Item removed', 'success');
+      renderQueueTab();
+    } else {
+      showToast('Delete failed', 'error');
+    }
+  } catch(e) { showToast('Request failed', 'error'); }
+}
+
+async function scanInboxDetail() {
+  showToast('Scanning inbox...', 'info');
+  try {
+    const res = await fetch(`/api/clients/${currentClient.id}/queue/scan`, { method: 'POST' });
+    const data = await res.json();
+    showToast(data.message || `Added ${data.added} items`, data.added > 0 ? 'success' : 'info');
+    renderQueueTab();
+  } catch(e) { showToast('Scan failed: ' + e.message, 'error'); }
+}
+
+async function renderAnalyticsTab() {
+  const tab = document.getElementById('tab-analytics');
+  tab.innerHTML = `<div class="loading"><div class="spinner"></div> Loading analytics...</div>`;
+
+  let data = {};
+  try {
+    const res = await fetch(`/api/clients/${currentClient.id}/analytics`);
+    data = await res.json();
+  } catch(e) {}
+
+  const byPlatform = data.by_platform || {};
+  const maxCount = Math.max(...Object.values(byPlatform), 1);
+
+  tab.innerHTML = `
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:16px;">Analytics</h3>
+    <div class="analytics-grid">
+      <div class="analytics-card"><div class="av" style="color:var(--accent)">${data.total_queued ?? 0}</div><div class="al">Total Queued</div></div>
+      <div class="analytics-card"><div class="av" style="color:var(--green)">${data.posted ?? 0}</div><div class="al">Posted</div></div>
+      <div class="analytics-card"><div class="av" style="color:var(--yellow)">${data.pending ?? 0}</div><div class="al">Pending</div></div>
+      <div class="analytics-card"><div class="av" style="color:var(--red)">${data.failed ?? 0}</div><div class="al">Failed</div></div>
+    </div>
+
+    ${Object.keys(byPlatform).length > 0 ? `
+    <h4 style="font-size:13px;font-weight:600;margin-bottom:12px;">Posts by Platform</h4>
+    <div class="platform-bar-chart">
+      ${Object.entries(byPlatform).map(([p, count]) => {
+        const pct = Math.round((count / maxCount) * 100);
+        return `<div class="platform-bar-row">
+          <div class="bar-label">${PLATFORM_INFO[p]?.icon || p} ${PLATFORM_INFO[p]?.label || p}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+          <div class="bar-count">${count}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    ` : `<div style="color:var(--text-dim);font-size:13px;">No posting history yet.</div>`}
+
+    <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
+      <h4 style="font-size:13px;font-weight:600;margin-bottom:12px;">Weekly Report</h4>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="week" id="report-week" style="flex:1;" value="${getCurrentWeekValue()}">
+        <button class="btn btn-ghost btn-sm" onclick="generateReport()">Generate Report</button>
+        <button class="btn btn-ghost btn-sm" onclick="generateReport(true)">Generate + Email</button>
+      </div>
+    </div>
+  `;
+}
+
+function getCurrentWeekValue() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const week = getWeekNumber(now);
+  return `${year}-W${String(week).padStart(2,'0')}`;
+}
+
+function getWeekNumber(d) {
+  d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+  return Math.ceil((((d-yearStart)/86400000)+1)/7);
+}
+
+async function generateReport(email=false) {
+  const weekVal = document.getElementById('report-week')?.value || getCurrentWeekValue();
+  // Convert from "2026-W11" format
+  const week = weekVal.replace('W0', 'W').replace('-W', '-W');
+  showToast('Generating report...', 'info');
+
+  try {
+    // This calls the script via the onboard endpoint concept - for now open in new tab
+    const url = `/api/clients/${currentClient.id}/analytics`;
+    const res = await fetch(url);
+    const data = await res.json();
+    showToast(`Report: ${data.posted} posts, ${data.pending} pending. Check reports/ folder.`, 'success');
+  } catch(e) { showToast('Report generation not available via UI. Use: python3 scripts/generate_report.py --client ' + currentClient.id, 'info'); }
+}
+
+function renderSettingsTab() {
+  const c = currentClient;
+  const posting = c.posting || {};
+  const reporting = c.reporting || {};
+
+  document.getElementById('tab-settings').innerHTML = `
+    <div class="settings-section">
+      <h3>Posting Settings</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Frequency</label>
+          <select id="set-frequency" onchange="settingsChanged()">
+            <option value="daily" ${posting.frequency==='daily'?'selected':''}>Daily</option>
+            <option value="weekdays" ${posting.frequency==='weekdays'?'selected':''}>Weekdays only</option>
+            <option value="weekly" ${posting.frequency==='weekly'?'selected':''}>Weekly</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Max Posts Per Day</label>
+          <input type="number" id="set-maxperday" value="${posting.max_per_day||2}" min="1" max="10" oninput="settingsChanged()">
+        </div>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Auto-engagement</div>
+          <div class="toggle-desc">Auto-like and respond to mentions</div>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" id="set-engage" ${posting.engage?'checked':''} onchange="settingsChanged()">
+          <span style="font-size:13px;" id="set-engage-label">${posting.engage?'On':'Off'}</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>Reporting</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Report Day</label>
+          <select id="set-report-day" onchange="settingsChanged()">
+            ${['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(d =>
+              `<option value="${d}" ${reporting.day===d?'selected':''}>${d.charAt(0).toUpperCase()+d.slice(1)}</option>`
+            ).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Report Time</label>
+          <input type="time" id="set-report-time" value="${reporting.time||'08:00'}" onchange="settingsChanged()">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Report Email</label>
+        <input type="email" id="set-report-email" value="${escapeAttr(reporting.email||'')}" oninput="settingsChanged()">
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>Danger Zone</h3>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-danger btn-sm" onclick="deleteClient()">Delete Client</button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:4px;" id="settings-save-row" style="display:none;">
+      <button class="btn btn-primary btn-sm" onclick="saveSettings()">Save Settings</button>
+    </div>
+  `;
+
+  document.getElementById('set-engage').addEventListener('change', function() {
+    document.getElementById('set-engage-label').textContent = this.checked ? 'On' : 'Off';
+  });
+}
+
+function settingsChanged() {
+  document.getElementById('settings-save-row').style.display = 'flex';
+}
+
+async function saveSettings() {
+  const c = currentClient;
+  const updated = {
+    ...c,
+    posting: {
+      ...c.posting,
+      frequency: document.getElementById('set-frequency').value,
+      max_per_day: parseInt(document.getElementById('set-maxperday').value) || 2,
+      engage: document.getElementById('set-engage').checked,
+    },
+    reporting: {
+      ...c.reporting,
+      day: document.getElementById('set-report-day').value,
+      time: document.getElementById('set-report-time').value,
+      email: document.getElementById('set-report-email').value.trim(),
+    }
+  };
+  try {
+    const res = await fetch(`/api/clients/${c.id}`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(updated)
+    });
+    if (res.ok) {
+      const saved = await res.json();
+      currentClient = saved;
+      clients = clients.map(x => x.id === c.id ? saved : x);
+      showToast('Settings saved', 'success');
+      document.getElementById('settings-save-row').style.display = 'none';
+    } else {
+      showToast('Save failed', 'error');
+    }
+  } catch(e) { showToast('Save failed: ' + e.message, 'error'); }
+}
+
+async function deleteClient() {
+  if (!confirm(`Delete client "${currentClient.name}"? This cannot be undone.`)) return;
+  showToast('Delete not yet implemented (remove JSON file manually)', 'error');
+}
+
+// ===== PAUSE / RESUME =====
+async function toggleClientPause() {
+  const c = currentClient;
+  const isPaused = c.status === 'paused';
+  const endpoint = isPaused ? 'resume' : 'pause';
+  try {
+    const res = await fetch(`/api/clients/${c.id}/${endpoint}`, { method: 'POST' });
+    const data = await res.json();
+    if (data.ok) {
+      currentClient.status = data.status;
+      clients = clients.map(x => x.id === c.id ? {...x, status: data.status} : x);
+      renderCards();
+      const btn = document.getElementById('detail-pause-btn');
+      btn.textContent = data.status === 'active' ? 'Pause Client' : 'Resume Client';
+      btn.className = `btn btn-sm ${data.status === 'active' ? 'btn-ghost' : 'btn-success'}`;
+      showToast(`Client ${data.status}`, 'success');
+    }
+  } catch(e) { showToast('Request failed', 'error'); }
+}
+
+async function quickPause(id) {
+  event.stopPropagation();
+  try {
+    const res = await fetch(`/api/clients/${id}/pause`, { method: 'POST' });
+    const data = await res.json();
+    if (data.ok) {
+      clients = clients.map(c => c.id === id ? {...c, status: 'paused'} : c);
+      renderCards();
+      showToast('Client paused', 'success');
+    }
+  } catch(e) { showToast('Request failed', 'error'); }
+}
+
+async function quickResume(id) {
+  event.stopPropagation();
+  try {
+    const res = await fetch(`/api/clients/${id}/resume`, { method: 'POST' });
+    const data = await res.json();
+    if (data.ok) {
+      clients = clients.map(c => c.id === id ? {...c, status: 'active'} : c);
+      renderCards();
+      showToast('Client resumed', 'success');
+    }
+  } catch(e) { showToast('Request failed', 'error'); }
+}
+
+async function scanInbox(id) {
+  event.stopPropagation();
+  showToast('Scanning inbox...', 'info');
+  try {
+    const res = await fetch(`/api/clients/${id}/queue/scan`, { method: 'POST' });
+    const data = await res.json();
+    showToast(data.message || `Added ${data.added} items`, data.added > 0 ? 'success' : 'info');
+    loadCardAnalytics(id);
+  } catch(e) { showToast('Scan failed: ' + e.message, 'error'); }
+}
+
+// ===== ADD CLIENT WIZARD =====
+async function openWizard() {
+  wizardStep = 1;
+  await fetchNextPort();
+  buildWizardProgress();
+  showWizardStep(1);
+  buildPlatformPicker();
+  document.getElementById('wizard-overlay').classList.add('open');
+}
+
+function closeWizard() {
+  document.getElementById('wizard-overlay').classList.remove('open');
+}
+
+async function fetchNextPort() {
+  try {
+    const res = await fetch('/api/clients/next-port');
+    const data = await res.json();
+    document.getElementById('w-port').value = data.port;
+    document.getElementById('port-preview').textContent = data.port;
+    document.getElementById('port-dir-preview').textContent = 'client-' + data.port;
+  } catch(e) {
+    document.getElementById('w-port').value = 18803;
+  }
+}
+
+function buildWizardProgress() {
+  const container = document.getElementById('wizard-progress');
+  container.innerHTML = WIZARD_STEPS.map((label, i) => {
+    const n = i + 1;
+    return `<div class="wizard-step-dot">
+      <div class="dot ${n < wizardStep ? 'done' : n === wizardStep ? 'active' : ''}" id="dot-${n}">${n < wizardStep ? '✓' : n}</div>
+      <div class="dot-label ${n === wizardStep ? 'active' : ''}">${label}</div>
+    </div>`;
+  }).join('');
+}
+
+function showWizardStep(step) {
+  document.querySelectorAll('.step-panel').forEach((p, i) => {
+    p.classList.toggle('active', i + 1 === step);
+  });
+  buildWizardProgress();
+  document.getElementById('wizard-step-label').textContent = `Step ${step} of ${WIZARD_STEPS.length}`;
+  document.getElementById('btn-back').style.display = step > 1 ? 'inline-flex' : 'none';
+  const nextBtn = document.getElementById('btn-next');
+  nextBtn.textContent = step === WIZARD_STEPS.length ? 'Create Client' : 'Next';
+  nextBtn.className = `btn ${step === WIZARD_STEPS.length ? 'btn-primary' : 'btn-primary'}`;
+
+  if (step === WIZARD_STEPS.length) buildWizardReview();
+}
+
+function buildPlatformPicker() {
+  const picker = document.getElementById('platform-picker');
+  picker.innerHTML = Object.entries(PLATFORM_INFO).map(([p, info]) => `
+    <div class="platform-row" id="prow-${p}">
+      <input type="checkbox" class="platform-toggle-cb" value="${p}" id="pt-${p}" onchange="togglePlatformRow('${p}')">
+      <div class="platform-name">${info.icon} ${info.label}</div>
+      <input type="text" class="platform-handle-input" id="ph-${p}" placeholder="@handle or name" style="display:none">
+      <div></div>
+    </div>
+  `).join('');
+}
+
+function togglePlatformRow(p) {
+  const checked = document.getElementById(`pt-${p}`).checked;
+  document.getElementById(`prow-${p}`).classList.toggle('on', checked);
+  document.getElementById(`ph-${p}`).style.display = checked ? 'block' : 'none';
+}
+
+function wizardAutoId() {
+  const name = document.getElementById('w-name').value;
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  document.getElementById('w-id').value = slug;
+  const folder = `/Users/mannai/.openclaw/workspace/assets/clients/${slug}/inbox/`;
+  document.getElementById('w-folder').value = folder;
+  // Update port display
+  const portPreviewDir = document.getElementById('port-dir-preview');
+  if (portPreviewDir) portPreviewDir.textContent = slug || 'client-id';
+}
+
+document.getElementById('w-port')?.addEventListener('input', function() {
+  document.getElementById('port-preview').textContent = this.value || '18803';
+});
+
+function buildWizardReview() {
+  const name = document.getElementById('w-name').value;
+  const id = document.getElementById('w-id').value;
+  const email = document.getElementById('w-email').value;
+  const port = document.getElementById('w-port').value;
+  const folder = document.getElementById('w-folder').value;
+  const sheet = document.getElementById('w-sheet').value;
+  const freq = document.getElementById('w-frequency').value;
+  const engage = document.getElementById('w-engage').value;
+
+  const enabledPlatforms = [...document.querySelectorAll('.platform-toggle-cb:checked')]
+    .map(cb => {
+      const p = cb.value;
+      const handle = document.getElementById(`ph-${p}`)?.value || '';
+      return `${PLATFORM_INFO[p]?.icon} ${PLATFORM_INFO[p]?.label}${handle ? ' (' + handle + ')' : ''}`;
+    });
+
+  document.getElementById('wizard-review').innerHTML = `
+    <div class="review-block">
+      <div class="review-row"><span class="review-label">Client Name</span><span class="review-value">${escapeHtml(name||'-')}</span></div>
+      <div class="review-row"><span class="review-label">Client ID</span><span class="review-value">${escapeHtml(id||'-')}</span></div>
+      <div class="review-row"><span class="review-label">Contact Email</span><span class="review-value">${escapeHtml(email||'-')}</span></div>
+    </div>
+    <div class="review-block">
+      <div class="review-row"><span class="review-label">Chrome Port</span><span class="review-value">${port}</span></div>
+      <div class="review-row"><span class="review-label">Platforms</span><span class="review-value">${enabledPlatforms.join(', ') || 'None'}</span></div>
+    </div>
+    <div class="review-block">
+      <div class="review-row"><span class="review-label">Content Folder</span><span class="review-value" style="font-size:12px;">${escapeHtml(folder||'-')}</span></div>
+      <div class="review-row"><span class="review-label">Sheet ID</span><span class="review-value">${escapeHtml(sheet||'None')}</span></div>
+    </div>
+    <div class="review-block">
+      <div class="review-row"><span class="review-label">Posting Frequency</span><span class="review-value">${freq}</span></div>
+      <div class="review-row"><span class="review-label">Auto-engagement</span><span class="review-value">${engage === 'true' ? 'Enabled' : 'Disabled'}</span></div>
+    </div>
+  `;
+}
+
+async function wizardNext() {
+  if (wizardStep < WIZARD_STEPS.length) {
+    if (!validateWizardStep(wizardStep)) return;
+    wizardStep++;
+    showWizardStep(wizardStep);
+  } else {
+    await createClientFromWizard();
+  }
+}
+
+function wizardBack() {
+  if (wizardStep > 1) {
+    wizardStep--;
+    showWizardStep(wizardStep);
+  }
+}
+
+function validateWizardStep(step) {
+  if (step === 1) {
+    const name = document.getElementById('w-name').value.trim();
+    const id = document.getElementById('w-id').value.trim();
+    if (!name || !id) {
+      showToast('Client name and ID are required', 'error');
+      return false;
+    }
+    if (!/^[a-z0-9-]+$/.test(id)) {
+      showToast('Client ID must be lowercase letters, numbers, and hyphens only', 'error');
+      return false;
+    }
+  }
+  if (step === 3) {
+    const port = parseInt(document.getElementById('w-port').value);
+    if (!port || port < 1024 || port > 65535) {
+      showToast('Valid port number required (1024-65535)', 'error');
+      return false;
+    }
+  }
+  return true;
+}
+
+async function createClientFromWizard() {
+  const id = document.getElementById('w-id').value.trim();
+  const name = document.getElementById('w-name').value.trim();
+  const email = document.getElementById('w-email').value.trim();
+  const port = parseInt(document.getElementById('w-port').value);
+  const folder = document.getElementById('w-folder').value.trim() ||
+    `/Users/mannai/.openclaw/workspace/assets/clients/${id}/inbox/`;
+  const sheet = document.getElementById('w-sheet').value.trim();
+  const notes = document.getElementById('w-notes').value.trim();
+  const freq = document.getElementById('w-frequency').value;
+  const maxPerDay = parseInt(document.getElementById('w-maxperday').value) || 2;
+  const engage = document.getElementById('w-engage').value === 'true';
+  const reportDay = document.getElementById('w-report-day').value;
+  const reportTime = document.getElementById('w-report-time').value;
+
+  // Build platforms object
+  const platforms = {};
+  for (const [p] of Object.entries(PLATFORM_INFO)) {
+    const enabled = document.getElementById(`pt-${p}`)?.checked || false;
+    const handle = document.getElementById(`ph-${p}`)?.value.trim() || '';
+    platforms[p] = {
+      enabled,
+      handle,
+      post_times: p === 'linkedin' ? ['08:00', '17:00'] : p === 'youtube' ? ['14:00'] : ['09:00', '18:00']
+    };
+  }
+
+  const cfg = {
+    id, name, status: 'setup',
+    cdp_port: port,
+    sheet_id: sheet,
+    content_folder: folder,
+    platforms,
+    posting: { frequency: freq, max_per_day: maxPerDay, engage, engage_times: ['10:00', '15:00', '20:00'] },
+    reporting: { frequency: 'weekly', day: reportDay, time: reportTime, email },
+    created_at: new Date().toISOString(),
+    notes,
+  };
+
+  const nextBtn = document.getElementById('btn-next');
+  nextBtn.disabled = true;
+  nextBtn.textContent = 'Creating...';
+
+  try {
+    const res = await fetch('/api/clients', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cfg)
+    });
+    if (res.ok) {
+      showToast(`Client "${name}" created!`, 'success');
+      closeWizard();
+      await loadClients();
+    } else {
+      const err = await res.json();
+      showToast(err.detail || 'Create failed', 'error');
+      nextBtn.disabled = false;
+      nextBtn.textContent = 'Create Client';
+    }
+  } catch(e) {
+    showToast('Create failed: ' + e.message, 'error');
+    nextBtn.disabled = false;
+    nextBtn.textContent = 'Create Client';
+  }
+}
+
+// ===== UTILS =====
+function showToast(msg, type='success') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escapeAttr(str) {
+  if (!str) return '';
+  return String(str).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// Close overlays on backdrop click
+document.getElementById('wizard-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeWizard();
+});
+document.getElementById('detail-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeDetail();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeWizard(); closeDetail(); }
+});
+
+// Init
+loadClients();
+</script>
+</body>
+</html>
