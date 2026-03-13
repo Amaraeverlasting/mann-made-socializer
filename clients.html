@@ -47,9 +47,9 @@
   }
 
   .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
-  .logo-icon { width: 34px; height: 34px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .logo-icon { width: 34px; height: 34px; background: linear-gradient(135deg, #7c6df0, #a855f7); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: white; }
   .logo-text h1 { font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.1; }
-  .logo-text span { font-size: 11px; color: var(--text-dim); }
+  .logo-text span { font-size: 10px; color: #7c6df0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; }
 
   nav { display: flex; gap: 4px; flex: 1; }
   .nav-tab { padding: 6px 16px; border-radius: 7px; border: none; background: transparent; color: var(--text-dim); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; text-decoration: none; display: inline-flex; align-items: center; }
@@ -279,10 +279,10 @@
 
 <header>
   <a href="/" class="logo">
-    <div class="logo-icon">📡</div>
+    <div class="logo-icon">MM</div>
     <div class="logo-text">
       <h1>Mann Made Socializer</h1>
-      <span>Socializer</span>
+      <span>AI Social Command Centre</span>
     </div>
   </a>
   <nav>
@@ -526,7 +526,7 @@ function renderCards() {
   const grid = document.getElementById('clients-grid');
   if (!clients.length) {
     grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-      <p>No clients configured yet.</p>
+      <p>No clients set up yet.</p>
       <button class="btn btn-primary" onclick="openWizard()">+ Add First Client</button>
     </div>`;
     return;

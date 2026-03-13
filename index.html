@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mann Made Socializer</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📡</text></svg>">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -18,7 +19,7 @@
     --text-dim: #8888aa;
     --border: #2a2a3a;
     --x-col: #ffffff;
-    --linkedin-col: #0077b5;
+    --linkedin-col: #0A66C2;
     --instagram-col: #e1306c;
     --tiktok-col: #ff0050;
     --youtube-col: #ff0000;
@@ -63,24 +64,31 @@
   .logo-icon {
     width: 34px;
     height: 34px;
-    background: var(--accent);
+    background: linear-gradient(135deg, var(--accent), #a855f7);
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 16px;
+    flex-shrink: 0;
+    font-weight: 800;
+    color: white;
   }
 
   .logo-text h1 {
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 15px;
+    font-weight: 800;
     color: var(--text);
     line-height: 1.1;
+    letter-spacing: -0.2px;
   }
 
   .logo-text span {
-    font-size: 11px;
-    color: var(--text-dim);
+    font-size: 10px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
   }
 
   nav {
@@ -103,6 +111,94 @@
 
   .nav-tab:hover { background: var(--surface2); color: var(--text); }
   .nav-tab.active { background: var(--accent-dim); color: var(--accent); }
+
+  /* MORE DROPDOWN */
+  .nav-more {
+    position: relative;
+  }
+  .nav-more-btn {
+    padding: 6px 14px;
+    border-radius: 7px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .nav-more-btn:hover { background: var(--surface2); color: var(--text); }
+  .nav-more-btn.has-active { background: var(--accent-dim); color: var(--accent); }
+  .nav-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 6px;
+    min-width: 180px;
+    z-index: 500;
+    display: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .nav-more:hover .nav-dropdown,
+  .nav-dropdown:hover { display: block; }
+  .nav-dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 7px 12px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.1s;
+  }
+  .nav-dropdown-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-dropdown-item.active { background: var(--accent-dim); color: var(--accent); }
+
+  /* SPINNER */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  /* LARRY TABS */
+  .larry-tab {
+    padding: 8px 18px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.15s;
+  }
+  .larry-tab:hover { color: var(--text); }
+  .larry-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* EMPTY STATE icon */
+  .empty-state-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+    opacity: 0.6;
+  }
 
   .header-right {
     display: flex;
@@ -149,8 +245,9 @@
   .btn-primary {
     background: var(--accent);
     color: #fff;
+    font-weight: 600;
   }
-  .btn-primary:hover { background: #6b5ce0; }
+  .btn-primary:hover { background: #6b5ce0; box-shadow: 0 0 0 3px rgba(124,109,240,0.25); }
 
   .btn-ghost {
     background: transparent;
@@ -160,11 +257,18 @@
   .btn-ghost:hover { background: var(--surface2); color: var(--text); }
 
   .btn-danger {
-    background: transparent;
+    background: rgba(239,68,68,0.12);
     color: var(--red);
-    border: 1px solid transparent;
+    border: 1px solid rgba(239,68,68,0.4);
   }
-  .btn-danger:hover { background: rgba(239,68,68,0.1); border-color: var(--red); }
+  .btn-danger:hover { background: rgba(239,68,68,0.22); border-color: var(--red); }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { background: var(--surface2); }
 
   .btn-sm { padding: 4px 10px; font-size: 12px; border-radius: 6px; }
 
@@ -184,8 +288,9 @@
   }
 
   .section-title {
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
   }
 
   /* CALENDAR */
@@ -721,12 +826,18 @@
 
   /* EMPTY STATE */
   .empty-state {
-    padding: 48px;
+    padding: 48px 24px;
     text-align: center;
     color: var(--text-dim);
+    font-size: 14px;
   }
 
-  .empty-state p { margin-bottom: 16px; }
+  .empty-state p { margin-bottom: 16px; line-height: 1.6; }
+
+  /* Table row hover */
+  .post-row:hover, .postlog-row:hover { background: var(--surface2); }
+  tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+  tr:hover { background: var(--surface2); }
 
   /* TOAST */
   .toast-container {
@@ -960,13 +1071,13 @@
   }
 
   /* Platform bg colours */
-  .platform-bg-x { background: rgba(255,255,255,0.08); }
-  .platform-bg-linkedin { background: rgba(0,119,181,0.2); }
+  .platform-bg-x { background: rgba(255,255,255,0.1); }
+  .platform-bg-linkedin { background: rgba(10,102,194,0.25); }
   .platform-bg-instagram { background: rgba(225,48,108,0.2); }
-  .platform-bg-tiktok { background: rgba(255,0,80,0.2); }
+  .platform-bg-tiktok { background: rgba(0,176,160,0.2); }
   .platform-bg-youtube { background: rgba(255,0,0,0.2); }
   .platform-bg-facebook { background: rgba(24,119,242,0.2); }
-  .platform-bg-snapchat { background: rgba(255,252,0,0.2); }
+  .platform-bg-snapchat { background: rgba(255,252,0,0.15); }
 
   .platform-col-x { color: #ffffff; }
   .platform-col-linkedin { color: var(--linkedin-col); }
@@ -982,28 +1093,33 @@
 
 <header>
   <div class="logo">
-    <div class="logo-icon">📡</div>
+    <div class="logo-icon">MM</div>
     <div class="logo-text">
       <h1>Mann Made Socializer</h1>
-      <span>Socializer</span>
+      <span>AI Social Command Centre</span>
     </div>
   </div>
   <nav>
     <button class="nav-tab active" onclick="switchTab('calendar', this)">Calendar</button>
-    <button class="nav-tab" onclick="switchTab('posts', this)">Posts</button>
-    <button class="nav-tab" onclick="switchTab('accounts', this)">Accounts</button>
-    <button class="nav-tab" onclick="switchTab('analytics', this)">Analytics</button>
-    <button class="nav-tab" onclick="switchTab('templates', this)">Templates</button>
-    <button class="nav-tab" onclick="switchTab('videos', this)">Videos</button>
-    <button class="nav-tab" onclick="switchTab('clients', this)">Clients</button>
-    <button class="nav-tab" onclick="switchTab('postiz', this)">Postiz</button>
     <button class="nav-tab" id="nav-tab-postlog" onclick="switchTab('postlog', this)">Post Log</button>
     <button class="nav-tab" id="nav-tab-approvals" onclick="switchTab('approvals', this)">Approvals</button>
-    <button class="nav-tab" id="nav-tab-weekly" onclick="switchTab('weekly', this)">Week View</button>
-    <button class="nav-tab" id="nav-tab-hashtags" onclick="switchTab('hashtags', this)">Hashtags</button>
-    <button class="nav-tab" id="nav-tab-larry" onclick="switchTab('larry', this)">🧠 Larry</button>
     <button class="nav-tab" id="nav-tab-clippings" onclick="switchTab('clippings', this)">✂️ Clippings</button>
-    <button class="nav-tab admin-only" id="tab-users" onclick="switchTab('users', this)" style="display:none">Users</button>
+    <button class="nav-tab" id="nav-tab-larry" onclick="switchTab('larry', this)">🧠 Larry</button>
+    <div class="nav-more" id="nav-more-wrapper">
+      <button class="nav-more-btn" id="nav-more-btn">More ▾</button>
+      <div class="nav-dropdown" id="nav-dropdown">
+        <button class="nav-dropdown-item" onclick="switchTab('posts', this)">Posts</button>
+        <button class="nav-dropdown-item" id="nav-tab-weekly" onclick="switchTab('weekly', this)">Week View</button>
+        <button class="nav-dropdown-item" onclick="switchTab('analytics', this)">Analytics</button>
+        <button class="nav-dropdown-item" onclick="switchTab('accounts', this)">Accounts</button>
+        <button class="nav-dropdown-item" id="nav-tab-hashtags" onclick="switchTab('hashtags', this)">Hashtags</button>
+        <button class="nav-dropdown-item" onclick="switchTab('templates', this)">Templates</button>
+        <button class="nav-dropdown-item" onclick="switchTab('videos', this)">Videos</button>
+        <button class="nav-dropdown-item" onclick="switchTab('clients', this)">Clients</button>
+        <button class="nav-dropdown-item" onclick="switchTab('postiz', this)">Postiz</button>
+        <button class="nav-dropdown-item admin-only" id="nav-tab-users" onclick="switchTab('users', this)" style="display:none">Users</button>
+      </div>
+    </div>
   </nav>
   <div class="header-right">
     <div class="stats-bar" id="header-stats">
@@ -1092,9 +1208,9 @@
       <h2 class="section-title">Analytics</h2>
     </div>
     <div class="analytics-hero">
-      <h2>Full Analytics Dashboard</h2>
-      <p>Detailed charts, engagement metrics, and performance data</p>
-      <a href="/analytics" class="btn btn-primary" style="display:inline-flex">📊 Open Analytics Dashboard</a>
+      <h2>Analytics</h2>
+      <p>Charts, engagement metrics, and what's actually performing</p>
+      <a href="/analytics" class="btn btn-primary" style="display:inline-flex">📊 Open Analytics</a>
     </div>
     <div class="stats-cards" id="stats-cards">
       <div class="stat-card">
@@ -1174,8 +1290,8 @@
         ondragleave="this.style.borderColor='var(--border)'"
         ondrop="handleVideoDrop(event)">
         <div style="font-size:32px;margin-bottom:8px;">🎬</div>
-        <div style="color:var(--text-dim);font-size:13px;">Drop video file here or click to upload</div>
-        <div style="color:var(--text-dim);font-size:11px;margin-top:6px;">Supports .mp4, .mov, .avi</div>
+        <div style="color:var(--text-dim);font-size:13px;">Drop your video here, or click to pick a file</div>
+        <div style="color:var(--text-dim);font-size:11px;margin-top:6px;">MP4, MOV, AVI</div>
       </div>
       <input type="file" id="video-file-input" accept=".mp4,.mov,.avi" style="display:none" onchange="handleVideoFileSelect(event)">
       <div id="video-selected-file" style="display:none;background:var(--surface2);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--text-dim)"></div>
@@ -1229,7 +1345,7 @@
         <span>Actions</span>
       </div>
       <div id="video-queue-list">
-        <div class="empty-state"><p>No videos queued. Upload one above.</p></div>
+        <div class="empty-state"><p>No videos yet. Drop one above to get started.</p></div>
       </div>
     </div>
 
@@ -1326,7 +1442,7 @@
       <!-- Quick schedule form -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;">
         <h3 style="font-size:14px;font-weight:600;margin-bottom:14px;">Quick Schedule</h3>
-        <textarea id="postiz-content" placeholder="Write your post..." rows="4"
+        <textarea id="postiz-content" placeholder="What are you posting?" rows="4"
           style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:13px;resize:vertical;margin-bottom:10px;"></textarea>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
           <input id="postiz-schedule-time" type="datetime-local"
@@ -1348,7 +1464,7 @@
           </select>
         </div>
         <div id="postiz-posts-list" style="display:flex;flex-direction:column;gap:10px;">
-          <div style="color:var(--text-dim);font-size:13px;">No posts loaded yet.</div>
+          <div class="empty-state"><div class="empty-state-icon">📤</div><p>No Postiz posts yet. Connect your Postiz account above.</p></div>
         </div>
       </div>
 
@@ -1420,7 +1536,7 @@
           <span>Action</span>
         </div>
         <div id="postlog-list">
-          <div class="empty-state"><p>Loading post log...</p></div>
+          <div class="empty-state"><div class="empty-state-icon">📋</div><p>Loading post log...</p></div>
         </div>
       </div>
 
@@ -1497,7 +1613,7 @@
         <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1.5fr 1fr;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;">
           <span>Content</span><span>Platform</span><span>Client</span><span>Scheduled</span><span>Actions</span>
         </div>
-        <div id="approvals-list"><div class="empty-state"><p>Loading...</p></div></div>
+        <div id="approvals-list"><div class="empty-state"><div class="empty-state-icon">✅</div><p>Loading approvals...</p></div></div>
       </div>
     </div>
     <!-- Reject reason modal -->
@@ -1507,7 +1623,7 @@
         <textarea id="reject-reason-input" rows="3" placeholder="Why is this being rejected?" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical;"></textarea>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
           <button class="btn btn-ghost" onclick="closeRejectModal()">Cancel</button>
-          <button class="btn" style="background:var(--red);color:#fff;" onclick="submitReject()">Reject Post</button>
+          <button class="btn btn-danger" style="border-color:var(--red);background:rgba(239,68,68,0.15);" onclick="submitReject()">Reject Post</button>
         </div>
       </div>
     </div>
@@ -1571,27 +1687,27 @@
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
         <div style="width:42px;height:42px;background:linear-gradient(135deg,#7c6df0,#a855f7);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;">🧠</div>
         <div>
-          <h2 style="font-size:20px;font-weight:700;">Larry Creative Intelligence</h2>
-          <p style="font-size:13px;color:var(--text-dim);">AI-powered content creation and performance analysis</p>
+          <h2 style="font-size:20px;font-weight:700;">Larry</h2>
+          <p style="font-size:13px;color:var(--text-dim);">Your AI content strategist. Drop a brief, get post variations ready to queue.</p>
         </div>
       </div>
 
       <!-- Larry sub-tabs -->
       <div style="display:flex;gap:4px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:0;">
-        <button class="larry-tab active" onclick="switchLarryTab('generator', this)" style="padding:8px 18px;border:none;background:transparent;color:var(--text-dim);font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;">Ad Generator</button>
-        <button class="larry-tab" onclick="switchLarryTab('performance', this)" style="padding:8px 18px;border:none;background:transparent;color:var(--text-dim);font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;">Performance</button>
-        <button class="larry-tab" onclick="switchLarryTab('recommendations', this)" style="padding:8px 18px;border:none;background:transparent;color:var(--text-dim);font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;">Recommendations</button>
-        <button class="larry-tab" onclick="switchLarryTab('hooks', this)" style="padding:8px 18px;border:none;background:transparent;color:var(--text-dim);font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;">Hook Library</button>
+        <button class="larry-tab active" onclick="switchLarryTab('generator', this)">Generate</button>
+        <button class="larry-tab" onclick="switchLarryTab('performance', this)">What's Working</button>
+        <button class="larry-tab" onclick="switchLarryTab('recommendations', this)">Recommendations</button>
+        <button class="larry-tab" onclick="switchLarryTab('hooks', this)">Hook Library</button>
       </div>
 
       <!-- AD GENERATOR -->
       <div id="larry-section-generator" class="larry-section">
         <div style="display:grid;grid-template-columns:360px 1fr;gap:24px;align-items:start;">
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;">
-            <h3 style="font-size:14px;font-weight:600;margin-bottom:16px;">Campaign Brief</h3>
+            <h3 style="font-size:14px;font-weight:600;margin-bottom:16px;">The Brief</h3>
             <div style="margin-bottom:14px;">
               <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Topic / Brief</label>
-              <textarea id="larry-topic" rows="4" placeholder="Describe your campaign, product, or idea..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+              <textarea id="larry-topic" rows="4" placeholder="e.g. We just launched a new AI feature for PodPal. Write something punchy for LinkedIn and X" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical;"></textarea>
             </div>
             <div style="margin-bottom:14px;">
               <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Client</label>
@@ -1604,7 +1720,7 @@
               <div style="display:flex;flex-wrap:wrap;gap:8px;" id="larry-platforms">
                 <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" value="x" checked> X</label>
                 <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" value="linkedin" checked> LinkedIn</label>
-                <label style="display:flex;align-items:center;gap=5px;font-size:13px;cursor:pointer;"><input type="checkbox" value="instagram"> Instagram</label>
+                <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" value="instagram"> Instagram</label>
                 <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" value="tiktok"> TikTok</label>
               </div>
             </div>
@@ -1626,7 +1742,7 @@
               <div id="larry-variations" style="display:flex;flex-direction:column;gap:14px;"></div>
             </div>
             <div id="larry-results-empty" style="display:flex;align-items:center;justify-content:center;height:300px;color:var(--text-dim);font-size:14px;">
-              Fill in your brief and click Generate
+              Add a brief and hit Generate
             </div>
           </div>
         </div>
@@ -1635,14 +1751,14 @@
       <!-- PERFORMANCE -->
       <div id="larry-section-performance" class="larry-section" style="display:none;">
         <div id="larry-performance-content">
-          <div class="empty-state"><p>Loading performance data...</p></div>
+          <div class="empty-state"><div class="empty-state-icon">📊</div><p>No engagement data yet. Posts need analytics scraped first.</p></div>
         </div>
       </div>
 
       <!-- RECOMMENDATIONS -->
       <div id="larry-section-recommendations" class="larry-section" style="display:none;">
         <div id="larry-recommendations-content">
-          <div class="empty-state"><p>Loading recommendations...</p></div>
+          <div class="empty-state"><div class="empty-state-icon">💡</div><p>No recommendations yet. Larry needs post performance data to generate insights.</p></div>
         </div>
       </div>
 
@@ -1690,7 +1806,7 @@
       <div class="modal-section active" id="modal-section-write">
         <div class="form-group">
           <label class="form-label">Content</label>
-          <textarea id="post-content" rows="5" placeholder="What do you want to share?" oninput="updateCharCount()"></textarea>
+          <textarea id="post-content" rows="5" placeholder="What's the post?" oninput="updateCharCount()"></textarea>
           <div class="char-counter" id="char-counter">0 characters</div>
         </div>
       </div>
@@ -1786,8 +1902,8 @@ const PLATFORM_ICONS = {
 };
 
 const PLATFORM_COLOURS = {
-  x: '#ffffff', linkedin: '#0077b5', instagram: '#e1306c',
-  tiktok: '#ff0050', youtube: '#ff0000', facebook: '#1877f2', snapchat: '#fffc00'
+  x: '#ffffff', linkedin: '#0A66C2', instagram: '#e1306c',
+  tiktok: '#00b0a0', youtube: '#ff0000', facebook: '#1877f2', snapchat: '#fffc00'
 };
 
 // ===== AUTH =====
@@ -1800,7 +1916,7 @@ async function loadCurrentUser() {
     document.getElementById('user-role-badge').textContent = currentUser.role;
     // Show Users tab only for admin
     if (currentUser.role === 'admin') {
-      document.getElementById('tab-users').style.display = '';
+      document.getElementById('nav-tab-users').style.display = '';
     }
   } catch (e) {
     window.location.href = '/login';
@@ -1922,11 +2038,17 @@ async function submitCreateUser() {
 }
 
 // ===== TAB SWITCHING =====
+// Secondary tabs that live inside the "More" dropdown
+const SECONDARY_TABS = new Set(['posts','weekly','analytics','accounts','hashtags','templates','videos','clients','postiz','users']);
+
 function switchTab(tab, btn) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.nav-tab, .nav-dropdown-item').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
   btn.classList.add('active');
+  // Highlight "More" button when a secondary tab is active
+  const moreBtn = document.getElementById('nav-more-btn');
+  if (moreBtn) moreBtn.classList.toggle('has-active', SECONDARY_TABS.has(tab));
   currentTab = tab;
   if (tab === 'templates') renderFullTemplatesGrid();
   if (tab === 'videos') onVideoTabSwitch();
@@ -2075,7 +2197,7 @@ function selectDay(y, m, d, posts, cell) {
   title.textContent = `Posts for ${months[m]} ${d}, ${y}`;
 
   if (posts.length === 0) {
-    list.innerHTML = '<div class="empty-state"><p>No posts scheduled for this day.</p><button class="btn btn-primary" onclick="openNewPost()">+ New Post</button></div>';
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📅</div><p>Nothing scheduled for this day.</p><button class="btn btn-primary" onclick="openNewPost()">+ New Post</button></div>';
   } else {
     list.innerHTML = posts.map(p => buildPostRow(p)).join('');
   }
@@ -2099,7 +2221,7 @@ function renderPostsList() {
   }
 
   if (filtered.length === 0) {
-    container.innerHTML = '<div class="empty-state"><p>No posts found.</p><button class="btn btn-primary" onclick="openNewPost()">+ New Post</button></div>';
+    container.innerHTML = '<div class="empty-state"><p>Nothing here yet — let\'s change that.</p><button class="btn btn-primary" onclick="openNewPost()">+ New Post</button></div>';
     return;
   }
 
@@ -2165,7 +2287,7 @@ async function deletePost(id) {
 function renderAccountsGrid() {
   const grid = document.getElementById('accounts-grid');
   if (!allAccounts.length) {
-    grid.innerHTML = '<div class="empty-state"><p>No accounts configured.</p></div>';
+    grid.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔗</div><p>No accounts connected yet.</p></div>';
     return;
   }
 
@@ -2274,7 +2396,7 @@ async function generateContent() {
 
   const tone = document.getElementById('ai-tone').value;
   const btn = document.getElementById('ai-generate-btn');
-  btn.textContent = 'Generating...';
+  btn.innerHTML = '<span class="spinner"></span> Generating...';
   btn.disabled = true;
 
   try {
@@ -2306,7 +2428,7 @@ async function generateContent() {
   } catch(e) {
     showToast('Generation failed: ' + e.message, 'error');
   } finally {
-    btn.textContent = '✨ Generate';
+    btn.innerHTML = '✨ Generate'; btn.disabled = false;
     btn.disabled = false;
   }
 }
@@ -2334,7 +2456,7 @@ function useGeneratedContent() {
   // Switch to write tab
   const writeBtns = document.querySelectorAll('.modal-tab');
   switchModalTab('write', writeBtns[0]);
-  showToast('Content loaded — edit and post!', 'success');
+  showToast('Content loaded. Edit and post!', 'success');
 }
 
 function syncGeneratedToMain() {
@@ -2368,7 +2490,7 @@ function useTemplate(templateText) {
   updateCharCount();
   const writeBtns = document.querySelectorAll('.modal-tab');
   switchModalTab('write', writeBtns[0]);
-  showToast('Template loaded — fill in the [placeholders]', 'success');
+  showToast('Template loaded. Fill in the [placeholders]!', 'success');
 }
 
 // ===== TEMPLATES TAB =====
@@ -2385,7 +2507,7 @@ function renderFullTemplatesGrid() {
   const grid = document.getElementById('templates-grid-full');
   if (!grid) return;
   if (!allTemplates.length) {
-    grid.innerHTML = '<div class="empty-state"><p>No templates found.</p></div>';
+    grid.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🗂</div><p>No templates found.</p></div>';
     return;
   }
   grid.innerHTML = allTemplates.map(t => {
@@ -2666,7 +2788,7 @@ function renderVideoQueue() {
   }
 
   if (!videos.length) {
-    container.innerHTML = '<div class="empty-state"><p>No videos found.</p></div>';
+    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🎬</div><p>No videos found.</p></div>';
     return;
   }
 
@@ -3103,7 +3225,7 @@ async function loadPostLog() {
     }
 
     if (!posts.length) {
-      list.innerHTML = '<div class="empty-state"><p>No posts logged yet.</p></div>';
+      list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>Nothing logged yet. Posts will show up here once they go out.</p></div>';
       return;
     }
 
@@ -3295,7 +3417,7 @@ async function loadApprovals() {
     if (navTab) navTab.textContent = posts.length > 0 ? `Approvals (${posts.length})` : 'Approvals';
 
     if (!posts.length) {
-      list.innerHTML = '<div class="empty-state"><p>No posts pending approval.</p></div>';
+      list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>Queue is clear. Nothing waiting for approval.</p></div>';
       return;
     }
     list.innerHTML = posts.map(p => {
@@ -3359,8 +3481,8 @@ let weeklyOffset = 0; // weeks from current
 let weeklyPosts = [];
 
 const PLATFORM_BG = {
-  x: '#111', linkedin: '#0077b5', instagram: '#e1306c',
-  tiktok: '#00b0a0', youtube: '#cc0000', facebook: '#1a4f9e'
+  x: '#111', linkedin: '#0A66C2', instagram: '#e1306c',
+  tiktok: '#008b80', youtube: '#cc0000', facebook: '#1a4f9e'
 };
 
 function getWeekStart(offset) {
@@ -3505,7 +3627,7 @@ function renderHashtagCards() {
   const grid = document.getElementById('hashtags-grid');
   if (!grid) return;
   if (!allHashtagSets.length) {
-    grid.innerHTML = '<div class="empty-state"><p>No hashtag sets yet.</p></div>';
+    grid.innerHTML = '<div class="empty-state"><div class="empty-state-icon">#️⃣</div><p>No hashtag sets yet. Create one to quickly append tags to posts.</p></div>';
     return;
   }
   const platformColors = { x: '#555', linkedin: '#0077b5', instagram: '#e1306c', tiktok: '#00b0a0', youtube: '#cc0000', facebook: '#1a4f9e' };
@@ -3669,7 +3791,7 @@ async function larryGenerate() {
   if (!platforms.length) { showToast('Select at least one platform', 'error'); return; }
 
   const btn = document.getElementById('larry-gen-btn');
-  btn.textContent = '✨ Generating...'; btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Generating...'; btn.disabled = true;
   document.getElementById('larry-results-empty').style.display = 'none';
 
   try {
@@ -3698,7 +3820,7 @@ async function larryGenerate() {
     results.style.display = 'block';
     document.getElementById('larry-results-empty').style.display = 'none';
   } catch(e) { showToast('Generation failed: ' + e.message, 'error'); }
-  finally { btn.textContent = '✨ Generate'; btn.disabled = false; }
+  finally { btn.innerHTML = '✨ Generate'; btn.disabled = false; }
 }
 
 function addLarryToQueue(idx) {
@@ -3734,7 +3856,7 @@ function filterHooks() {
   const list = document.getElementById('hook-list');
   if (!list) return;
   if (!filtered.length) {
-    list.innerHTML = '<div class="empty-state"><p>No hooks yet. Engage with posts to auto-save high-performing hooks.</p></div>';
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🪝</div><p>No hooks saved yet. Post content, track engagement, and the best openers will show up here.</p></div>';
     return;
   }
   list.innerHTML = filtered.map(h => `
@@ -3817,12 +3939,12 @@ async function generateClips() {
   const btn = document.getElementById('clips-generate-btn');
 
   if (!fileInput.files[0] && !localPath) {
-    alert('Please select a video file or paste a local path.');
+    showToast('Please select a video file or paste a local path.', 'error');
     return;
   }
 
   btn.disabled = true;
-  btn.textContent = 'Processing…';
+  btn.innerHTML = '<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,0.3);border-top-color:#fff;"></span> Processing…';
   setClipsStatus('Uploading video…', 'info');
 
   try {
@@ -3849,7 +3971,7 @@ async function generateClips() {
   } catch(e) {
     setClipsStatus('Error: ' + e.message, 'error');
     btn.disabled = false;
-    btn.textContent = 'Generate Clips';
+    btn.innerHTML = '✨ Generate Clips';
   }
 }
 
@@ -3873,13 +3995,13 @@ async function pollClipsJob(job_id, btn) {
     if (job.status === 'done') {
       clearInterval(clippingsPollTimer);
       btn.disabled = false;
-      btn.textContent = 'Generate Clips';
+      btn.innerHTML = '✨ Generate Clips';
       renderGeneratedClips(job.clips || []);
       loadClipsLibrary();
     } else if (job.status === 'error') {
       clearInterval(clippingsPollTimer);
       btn.disabled = false;
-      btn.textContent = 'Generate Clips';
+      btn.innerHTML = '✨ Generate Clips';
       setClipsStatus('Error: ' + (job.error || 'Unknown error'), 'error');
     }
   } catch(e) {
@@ -3942,7 +4064,7 @@ async function loadClipsLibrary() {
     const res = await fetch('/api/clips/', { credentials: 'include' });
     const clips = await res.json();
     if (!clips.length) {
-      container.innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:40px;">No clips yet. Generate some above!</p>';
+      container.innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:40px;">Nothing here yet. Upload a video above and let AI do the cutting.</p>';
       return;
     }
     container.innerHTML = clips.map(c => buildClipCard(c)).join('');
@@ -3990,9 +4112,9 @@ async function submitClipQueue() {
     });
     if (!res.ok) throw new Error(await res.text());
     closeClipQueueModal();
-    alert('✅ Clip added to queue!');
+    showToast('Clip added to queue!', 'success');
   } catch(e) {
-    alert('Error: ' + e.message);
+    showToast('Error: ' + e.message, 'error');
   }
 }
 
@@ -4017,7 +4139,7 @@ async function deleteClip(clipId, filename) {
       <div style="width:42px;height:42px;background:linear-gradient(135deg,#f59e0b,#ef4444);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;">✂️</div>
       <div>
         <h2 style="font-size:20px;font-weight:700;">Clippings</h2>
-        <p style="font-size:13px;color:var(--text-dim);">Upload a long video → AI finds best moments → cuts & captions Opus-style clips</p>
+        <p style="font-size:13px;color:var(--text-dim);">Turn long videos into social clips. AI finds the moments, we do the rest.</p>
       </div>
     </div>
 
@@ -4028,7 +4150,8 @@ async function deleteClip(clipId, filename) {
       <div id="clips-dropzone" style="border:2px dashed var(--border);border-radius:10px;padding:40px;text-align:center;cursor:pointer;transition:border-color 0.2s;"
            onclick="document.getElementById('clips-file-input').click()">
         <div style="font-size:32px;margin-bottom:8px;">🎬</div>
-        <div id="clips-dropzone-hint" style="color:var(--text-dim);font-size:13px;">Drag & drop video here, or click to browse</div>
+        <div id="clips-dropzone-hint" style="color:var(--text-dim);font-size:13px;">Drop a video here, or click to pick one</div>
+        <div style="color:var(--text-dim);font-size:11px;margin-top:4px;">MP4, MOV, AVI — up to 2GB</div>
         <div id="clips-selected-file" style="margin-top:8px;color:var(--accent);font-size:12px;"></div>
         <input type="file" id="clips-file-input" accept="video/*" style="display:none">
       </div>
@@ -4047,8 +4170,8 @@ async function deleteClip(clipId, filename) {
                  style="width:100px;">
           <span id="clips-num-val" style="font-size:12px;font-weight:600;min-width:16px;">5</span>
         </div>
-        <button id="clips-generate-btn" onclick="generateClips()"
-                style="padding:9px 24px;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
+        <button id="clips-generate-btn" class="btn btn-primary" onclick="generateClips()"
+                style="background:linear-gradient(135deg,#f59e0b,#ef4444);border:none;">
           ✨ Generate Clips
         </button>
       </div>
@@ -4069,7 +4192,7 @@ async function deleteClip(clipId, filename) {
         <button onclick="loadClipsLibrary()" style="padding:5px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:pointer;color:var(--text);">↻ Refresh</button>
       </div>
       <div id="clips-library-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;">
-        <p style="color:var(--text-dim);">Loading…</p>
+        <div class="empty-state" style="grid-column:1/-1;"><div class="empty-state-icon">✂️</div><p>No clips yet. Upload a video above and click Generate Clips.</p></div>
       </div>
     </div>
   </div>
