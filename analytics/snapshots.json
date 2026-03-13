@@ -118,5 +118,45 @@
         "date": "2026-03-11"
       }
     ]
+  },
+  {
+    "date": "2026-03-13",
+    "timestamp": "2026-03-13T07:02:45.956724",
+    "posts_total": 127,
+    "posts_today": 0,
+    "posts_this_week": 67,
+    "by_platform": {
+      "x": 70,
+      "linkedin": 57
+    },
+    "by_status": {},
+    "queue_total": 0,
+    "top_posts": [
+      {
+        "platform": "linkedin",
+        "content": "The information premium is dead. The judgment premium is skyrocketing.\n\nFor most of business history",
+        "date": "2026-03-12"
+      },
+      {
+        "platform": "x",
+        "content": "Peter Diamandis says the world's best doctor will soon be AI seeing a billion patients. Most people ",
+        "date": "2026-03-12"
+      },
+      {
+        "platform": "x",
+        "content": "The UK took 50 years to move from telegraph to telephone. The US took 30 years to get from mainframe",
+        "date": "2026-03-12"
+      },
+      {
+        "platform": "x",
+        "content": "Kurzweil's been saying aging will become optional. What changed isn't the prediction, it's the evide",
+        "date": "2026-03-12"
+      },
+      {
+        "platform": "linkedin",
+        "content": "Ray Kurzweil has been saying for two decades that we'll reach longevity escape velocity by the early",
+        "date": "2026-03-12"
+      }
+    ]
   }
 ]

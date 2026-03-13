@@ -976,6 +976,7 @@
   .platform-col-facebook { color: var(--facebook-col); }
   .platform-col-snapchat { color: var(--snapchat-col); }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
 </head>
 <body>
 
@@ -997,6 +998,10 @@
     <button class="nav-tab" onclick="switchTab('clients', this)">Clients</button>
     <button class="nav-tab" onclick="switchTab('postiz', this)">Postiz</button>
     <button class="nav-tab" id="nav-tab-postlog" onclick="switchTab('postlog', this)">Post Log</button>
+    <button class="nav-tab" id="nav-tab-approvals" onclick="switchTab('approvals', this)">Approvals</button>
+    <button class="nav-tab" id="nav-tab-weekly" onclick="switchTab('weekly', this)">Week View</button>
+    <button class="nav-tab" id="nav-tab-hashtags" onclick="switchTab('hashtags', this)">Hashtags</button>
+    <button class="nav-tab" id="nav-tab-larry" onclick="switchTab('larry', this)">🧠 Larry</button>
     <button class="nav-tab admin-only" id="tab-users" onclick="switchTab('users', this)" style="display:none">Users</button>
   </nav>
   <div class="header-right">
@@ -1480,6 +1485,188 @@
     </div>
   </div>
 
+  <!-- APPROVALS TAB -->
+  <div id="tab-approvals" class="tab-panel">
+    <div style="padding:0;max-width:1200px;margin:0 auto;">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+        <h2 style="font-size:18px;font-weight:700;flex:1;">Approval Queue</h2>
+        <button class="btn btn-ghost" style="font-size:12px;" onclick="loadApprovals()">Refresh</button>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1.5fr 1fr;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;">
+          <span>Content</span><span>Platform</span><span>Client</span><span>Scheduled</span><span>Actions</span>
+        </div>
+        <div id="approvals-list"><div class="empty-state"><p>Loading...</p></div></div>
+      </div>
+    </div>
+    <!-- Reject reason modal -->
+    <div id="reject-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;width:420px;max-width:95vw;">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">Rejection Reason</h3>
+        <textarea id="reject-reason-input" rows="3" placeholder="Why is this being rejected?" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+          <button class="btn btn-ghost" onclick="closeRejectModal()">Cancel</button>
+          <button class="btn" style="background:var(--red);color:#fff;" onclick="submitReject()">Reject Post</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEKLY CALENDAR TAB -->
+  <div id="tab-weekly" class="tab-panel">
+    <div style="max-width:1400px;margin:0 auto;">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+        <button class="btn btn-ghost" onclick="weeklyNav(-1)">‹ Prev</button>
+        <h2 style="font-size:18px;font-weight:700;flex:1;text-align:center;" id="weekly-label">Week</h2>
+        <button class="btn btn-ghost" onclick="weeklyNav(1)">Next ›</button>
+      </div>
+      <div id="weekly-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;min-height:400px;"></div>
+    </div>
+  </div>
+
+  <!-- HASHTAGS TAB -->
+  <div id="tab-hashtags" class="tab-panel">
+    <div style="max-width:1100px;margin:0 auto;">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+        <h2 style="font-size:18px;font-weight:700;flex:1;">Hashtag Sets</h2>
+        <button class="btn btn-primary" onclick="openHashtagModal()">+ New Set</button>
+      </div>
+      <div id="hashtags-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;"></div>
+    </div>
+    <!-- Hashtag set modal -->
+    <div id="hashtag-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;width:480px;max-width:95vw;">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:20px;" id="hashtag-modal-title">New Hashtag Set</h3>
+        <input type="hidden" id="hashtag-edit-id">
+        <div style="margin-bottom:14px;">
+          <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Name</label>
+          <input type="text" id="hashtag-name" placeholder="e.g. AI Tech SA" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:inherit;">
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Tags (comma or space separated)</label>
+          <textarea id="hashtag-tags" rows="3" placeholder="#AI #TechSA #SouthAfrica" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Platforms</label>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;" id="hashtag-platform-checks">
+            <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" value="x"> X</label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" value="linkedin"> LinkedIn</label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" value="instagram"> Instagram</label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" value="tiktok"> TikTok</label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" value="youtube"> YouTube</label>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button class="btn btn-ghost" onclick="closeHashtagModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="submitHashtagSet()">Save Set</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LARRY CREATIVE STUDIO TAB -->
+  <div id="tab-larry" class="tab-panel">
+    <div style="max-width:1200px;margin:0 auto;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+        <div style="width:42px;height:42px;background:linear-gradient(135deg,#7c6df0,#a855f7);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;">🧠</div>
+        <div>
+          <h2 style="font-size:20px;font-weight:700;">Larry Creative Intelligence</h2>
+          <p style="font-size:13px;color:var(--text-dim);">AI-powered content creation and performance analysis</p>
+        </div>
+      </div>
+
+      <!-- Larry sub-tabs -->
+      <div style="display:flex;gap:4px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:0;">
+        <button class="larry-tab active" onclick="switchLarryTab('generator', this)" style="padding:8px 18px;border:none;background:transparent;color:var(--text-dim);font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;">Ad Generator</button>
+        <button class="larry-tab" onclick="switchLarryTab('performance', this)" style="padding:8px 18px;border:none;background:transparent;color:var(--text-dim);font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;">Performance</button>
+        <button class="larry-tab" onclick="switchLarryTab('recommendations', this)" style="padding:8px 18px;border:none;background:transparent;color:var(--text-dim);font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;">Recommendations</button>
+        <button class="larry-tab" onclick="switchLarryTab('hooks', this)" style="padding:8px 18px;border:none;background:transparent;color:var(--text-dim);font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;">Hook Library</button>
+      </div>
+
+      <!-- AD GENERATOR -->
+      <div id="larry-section-generator" class="larry-section">
+        <div style="display:grid;grid-template-columns:360px 1fr;gap:24px;align-items:start;">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;">
+            <h3 style="font-size:14px;font-weight:600;margin-bottom:16px;">Campaign Brief</h3>
+            <div style="margin-bottom:14px;">
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Topic / Brief</label>
+              <textarea id="larry-topic" rows="4" placeholder="Describe your campaign, product, or idea..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+            </div>
+            <div style="margin-bottom:14px;">
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Client</label>
+              <select id="larry-client" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:inherit;">
+                <option value="">Any client</option>
+              </select>
+            </div>
+            <div style="margin-bottom:14px;">
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Platforms</label>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;" id="larry-platforms">
+                <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" value="x" checked> X</label>
+                <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" value="linkedin" checked> LinkedIn</label>
+                <label style="display:flex;align-items:center;gap=5px;font-size:13px;cursor:pointer;"><input type="checkbox" value="instagram"> Instagram</label>
+                <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" value="tiktok"> TikTok</label>
+              </div>
+            </div>
+            <div style="margin-bottom:20px;">
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Content Type</label>
+              <select id="larry-content-type" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:inherit;">
+                <option value="thought_leadership">Thought Leadership</option>
+                <option value="product_promo">Product Promo</option>
+                <option value="event_announcement">Event Announcement</option>
+                <option value="engagement_hook">Engagement Hook</option>
+                <option value="behind_the_scenes">Behind the Scenes</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" style="width:100%;" onclick="larryGenerate()" id="larry-gen-btn">✨ Generate</button>
+          </div>
+          <div>
+            <div id="larry-results" style="display:none;">
+              <h3 style="font-size:14px;font-weight:600;margin-bottom:14px;">Generated Variations</h3>
+              <div id="larry-variations" style="display:flex;flex-direction:column;gap:14px;"></div>
+            </div>
+            <div id="larry-results-empty" style="display:flex;align-items:center;justify-content:center;height:300px;color:var(--text-dim);font-size:14px;">
+              Fill in your brief and click Generate
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PERFORMANCE -->
+      <div id="larry-section-performance" class="larry-section" style="display:none;">
+        <div id="larry-performance-content">
+          <div class="empty-state"><p>Loading performance data...</p></div>
+        </div>
+      </div>
+
+      <!-- RECOMMENDATIONS -->
+      <div id="larry-section-recommendations" class="larry-section" style="display:none;">
+        <div id="larry-recommendations-content">
+          <div class="empty-state"><p>Loading recommendations...</p></div>
+        </div>
+      </div>
+
+      <!-- HOOK LIBRARY -->
+      <div id="larry-section-hooks" class="larry-section" style="display:none;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+          <input type="text" id="hook-search" placeholder="Search hooks..." oninput="filterHooks()" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:inherit;">
+          <button class="btn btn-ghost" onclick="loadHooks()">Refresh</button>
+        </div>
+        <div id="hook-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- POST DETAIL PANEL -->
+  <div id="post-detail-backdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;" onclick="closePostDetail()"></div>
+  <div id="post-detail-panel" style="display:none;position:fixed;right:0;top:0;bottom:0;width:400px;background:var(--surface);border-left:1px solid var(--border);z-index:201;overflow-y:auto;padding:24px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <h3 style="font-size:16px;font-weight:700;">Post Detail</h3>
+      <button onclick="closePostDetail()" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;">✕</button>
+    </div>
+    <div id="post-detail-body"></div>
+  </div>
+
 </main>
 
 <!-- NEW POST MODAL -->
@@ -1560,6 +1747,12 @@
         <input type="datetime-local" id="schedule-datetime" style="display:none" />
       </div>
       <div class="form-group">
+        <label class="form-label">Hashtag Set <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <select id="post-hashtag-set" onchange="applyHashtagSet()" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:inherit;">
+          <option value="">None</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label class="form-label">Campaign <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
         <input type="text" id="post-campaign" placeholder="e.g. Product Launch, SUSA Summit…" />
       </div>
@@ -1637,6 +1830,16 @@ async function init() {
       const fc = (fdata.posts || []).length;
       const navTab = document.getElementById('nav-tab-postlog');
       if (navTab && fc > 0) navTab.textContent = `Post Log (${fc})`;
+    }
+  } catch (_) {}
+  // Check pending approvals badge
+  try {
+    const ares = await fetch('/api/posts/pending', { credentials: 'include' });
+    if (ares.ok) {
+      const aData = await ares.json();
+      const ac = (aData || []).length;
+      const aTab = document.getElementById('nav-tab-approvals');
+      if (aTab && ac > 0) aTab.textContent = `Approvals (${ac})`;
     }
   } catch (_) {}
 }
@@ -1729,6 +1932,10 @@ function switchTab(tab, btn) {
   if (tab === 'postiz') refreshPostizTab();
   if (tab === 'users') loadUsers();
   if (tab === 'postlog') { loadPostLog(); startPostLogAutoRefresh(); } else { stopPostLogAutoRefresh(); }
+  if (tab === 'approvals') { loadApprovals(); startApprovalsAutoRefresh(); } else { stopApprovalsAutoRefresh(); }
+  if (tab === 'weekly') loadWeeklyCalendar();
+  if (tab === 'hashtags') loadHashtagSets();
+  if (tab === 'larry') { populateLarryClients(); }
 }
 
 // ===== API CALLS =====
@@ -2920,14 +3127,14 @@ async function loadPostLog() {
         ? `<button class="btn btn-sm btn-post-now" onclick="retryPost(${p.id}, this)">Retry</button>`
         : '';
 
-      return `<div style="display:grid;grid-template-columns:1fr 1fr 2.5fr 1fr 1.4fr 1.6fr auto;gap:10px;padding:11px 16px;border-bottom:1px solid var(--border);align-items:center;font-size:12px;transition:background 0.1s;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+      return `<div data-log-id="${p.id}" style="display:grid;grid-template-columns:1fr 1fr 2.5fr 1fr 1.4fr 1.6fr auto;gap:10px;padding:11px 16px;border-bottom:1px solid var(--border);align-items:center;font-size:12px;transition:background 0.1s;cursor:pointer;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''" onclick="openPostDetail(${p.id})">
         <span style="color:var(--text);font-weight:500;">${escapeHtml(p.client_id || '')}</span>
         <span style="color:var(--text-dim);text-transform:capitalize;">${escapeHtml(p.platform || '')}</span>
         <span style="color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(p.content || '')}">${escapeHtml(contentPreview)}</span>
         <span><span class="badge ${statusClass}" style="${statusStyle}">${p.status || 'pending'}</span></span>
         <span style="color:var(--text-dim);">${createdAt}</span>
         <span style="color:var(--red);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(p.error || '')}">${escapeHtml(errorText)}</span>
-        <div style="display:flex;gap:4px;">${retryBtn}</div>
+        <div style="display:flex;gap:4px;" onclick="event.stopPropagation()">${retryBtn}</div>
       </div>`;
     }).join('');
 
@@ -2965,6 +3172,15 @@ function stopPostLogAutoRefresh() {
   if (postLogRefreshTimer) { clearInterval(postLogRefreshTimer); postLogRefreshTimer = null; }
 }
 
+let approvalsTimer = null;
+function startApprovalsAutoRefresh() {
+  if (approvalsTimer) clearInterval(approvalsTimer);
+  approvalsTimer = setInterval(loadApprovals, 30000);
+}
+function stopApprovalsAutoRefresh() {
+  if (approvalsTimer) { clearInterval(approvalsTimer); approvalsTimer = null; }
+}
+
 // Initialize sheet setup when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
   // Pre-fill saved sheet ID
@@ -2973,7 +3189,594 @@ document.addEventListener('DOMContentLoaded', () => {
   if (saved && input) input.value = saved;
   // Load template on first visit to postiz tab (also called from switchTab)
   loadSheetTemplate();
+  // Load hashtag sets for modal dropdown
+  loadHashtagSetsForModal();
 });
+
+// ===== MAKE POST LOG ROWS CLICKABLE =====
+// Override the post log render to add click handler for detail panel
+const _origLoadPostLog = loadPostLog;
+
+// ===== POST DETAIL PANEL =====
+function openPostDetail(logId) {
+  const panel = document.getElementById('post-detail-panel');
+  const backdrop = document.getElementById('post-detail-backdrop');
+  const body = document.getElementById('post-detail-body');
+  if (!panel) return;
+  body.innerHTML = '<p style="color:var(--text-dim)">Loading...</p>';
+  panel.style.display = 'block';
+  backdrop.style.display = 'block';
+
+  fetch(`/api/posts/${logId}/detail`, { credentials: 'include' })
+    .then(r => r.json())
+    .then(post => {
+      const statusColors = { posted: 'var(--green)', queued: '#7c6df0', retrying: '#f59e0b', failed: 'var(--red)', pending: 'var(--text-dim)' };
+      const sc = statusColors[post.status] || 'var(--text-dim)';
+      const retries = (post.retry_history || []).map(r => `<div style="font-size:12px;color:var(--text-dim);padding:4px 0;border-bottom:1px solid var(--border)">Retry at ${(r.retry_at||'').substring(0,16)} — ${escapeHtml(r.reason||'')}</div>`).join('') || '<p style="font-size:12px;color:var(--text-dim)">No retries recorded.</p>';
+      body.innerHTML = `
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.7;white-space:pre-wrap;">${escapeHtml(post.content||'')}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+          <span style="background:rgba(124,109,240,0.15);color:var(--accent);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">${escapeHtml(post.platform||'')}</span>
+          <span style="background:rgba(34,197,94,0.12);color:var(--green);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">${escapeHtml(post.client_id||'')}</span>
+          <span style="background:rgba(124,109,240,0.1);color:${sc};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">${post.status||'unknown'}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px;">
+          <div>Created: ${(post.created_at||'').substring(0,16)}</div>
+          <div>Scheduled: ${(post.scheduled_at||'—').substring(0,16)}</div>
+          <div>Posted: ${(post.posted_at||'—').substring(0,16)}</div>
+        </div>
+        <div style="margin-bottom:16px;">
+          <h4 style="font-size:12px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Retry History</h4>
+          ${retries}
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;">
+          <h4 style="font-size:13px;font-weight:600;margin-bottom:12px;">Engagement</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px;">Likes</label><input type="number" id="eng-likes" value="${post.likes||0}" style="width:100%;background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:14px;"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px;">Reposts</label><input type="number" id="eng-reposts" value="${post.reposts||0}" style="width:100%;background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:14px;"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px;">Comments</label><input type="number" id="eng-comments" value="${post.comments||0}" style="width:100%;background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:14px;"></div>
+          </div>
+          <button class="btn btn-primary btn-sm" style="width:100%;" onclick="saveEngagement(${post.id})">Save Engagement</button>
+        </div>`;
+    })
+    .catch(e => { body.innerHTML = `<p style="color:var(--red)">${e.message}</p>`; });
+}
+
+function closePostDetail() {
+  document.getElementById('post-detail-panel').style.display = 'none';
+  document.getElementById('post-detail-backdrop').style.display = 'none';
+}
+
+async function saveEngagement(logId) {
+  const likes = parseInt(document.getElementById('eng-likes')?.value || 0);
+  const reposts = parseInt(document.getElementById('eng-reposts')?.value || 0);
+  const comments = parseInt(document.getElementById('eng-comments')?.value || 0);
+  try {
+    const res = await fetch(`/api/posts/${logId}/engagement`, {
+      method: 'PATCH', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ likes, reposts, comments })
+    });
+    const data = await res.json();
+    if (data.ok) showToast('Engagement saved!', 'success');
+    else showToast('Failed to save', 'error');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ===== PATCH loadPostLog to make rows clickable =====
+const _patchedLoadPostLog = loadPostLog;
+// Wrap the postlog render to make rows clickable
+const origLoadPostLogFn = window.loadPostLog;
+window.loadPostLog = async function() {
+  await origLoadPostLogFn();
+  // Add click handlers after render
+  const rows = document.querySelectorAll('#postlog-list > div[data-log-id]');
+  rows.forEach(row => {
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', () => openPostDetail(row.dataset.logId));
+  });
+};
+
+// ===== APPROVALS =====
+let approvalsRefreshTimer = null;
+let pendingRejectId = null;
+
+async function loadApprovals() {
+  const list = document.getElementById('approvals-list');
+  if (!list) return;
+  try {
+    const res = await fetch('/api/posts/pending', { credentials: 'include' });
+    const posts = await res.json();
+
+    // Update badge
+    const navTab = document.getElementById('nav-tab-approvals');
+    if (navTab) navTab.textContent = posts.length > 0 ? `Approvals (${posts.length})` : 'Approvals';
+
+    if (!posts.length) {
+      list.innerHTML = '<div class="empty-state"><p>No posts pending approval.</p></div>';
+      return;
+    }
+    list.innerHTML = posts.map(p => {
+      const preview = (p.content||'').substring(0,80) + ((p.content||'').length > 80 ? '...' : '');
+      const sched = (p.scheduled_at||'').substring(0,16) || '—';
+      const plat = p.platform || (p.account_ids||[]).join(', ') || '—';
+      return `<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1.5fr 1fr;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);align-items:center;font-size:13px;">
+        <span style="color:var(--text);" title="${escapeHtml(p.content||'')}">${escapeHtml(preview)}</span>
+        <span style="color:var(--text-dim);text-transform:capitalize;">${escapeHtml(plat)}</span>
+        <span style="color:var(--text-dim);">${escapeHtml(p.client_id||'—')}</span>
+        <span style="color:var(--text-dim);">${sched}</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm" style="background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.3);" onclick="approvePost('${p.id}')">Approve</button>
+          <button class="btn btn-sm" style="background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3);" onclick="openRejectModal('${p.id}')">Reject</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = `<div class="empty-state"><p style="color:var(--red)">Error: ${e.message}</p></div>`;
+  }
+}
+
+async function approvePost(postId) {
+  try {
+    const res = await fetch(`/api/posts/${postId}/approve`, { method: 'POST', credentials: 'include' });
+    const data = await res.json();
+    if (data.ok) { showToast('Post approved', 'success'); loadApprovals(); }
+    else showToast('Failed to approve', 'error');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+function openRejectModal(postId) {
+  pendingRejectId = postId;
+  document.getElementById('reject-reason-input').value = '';
+  const m = document.getElementById('reject-modal');
+  m.style.display = 'flex';
+}
+
+function closeRejectModal() {
+  document.getElementById('reject-modal').style.display = 'none';
+  pendingRejectId = null;
+}
+
+async function submitReject() {
+  if (!pendingRejectId) return;
+  const reason = document.getElementById('reject-reason-input').value.trim();
+  try {
+    const res = await fetch(`/api/posts/${pendingRejectId}/reject`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason })
+    });
+    const data = await res.json();
+    if (data.ok) { showToast('Post rejected', 'success'); closeRejectModal(); loadApprovals(); }
+    else showToast('Failed', 'error');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ===== WEEKLY CALENDAR =====
+let weeklyOffset = 0; // weeks from current
+let weeklyPosts = [];
+
+const PLATFORM_BG = {
+  x: '#111', linkedin: '#0077b5', instagram: '#e1306c',
+  tiktok: '#00b0a0', youtube: '#cc0000', facebook: '#1a4f9e'
+};
+
+function getWeekStart(offset) {
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
+  monday.setHours(0,0,0,0);
+  return monday;
+}
+
+function weeklyNav(dir) {
+  weeklyOffset += dir;
+  loadWeeklyCalendar();
+}
+
+async function loadWeeklyCalendar() {
+  const start = getWeekStart(weeklyOffset);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  end.setHours(23,59,59,999);
+
+  document.getElementById('weekly-label').textContent =
+    `${start.toLocaleDateString('en-ZA',{day:'numeric',month:'short'})} – ${end.toLocaleDateString('en-ZA',{day:'numeric',month:'short',year:'numeric'})}`;
+
+  try {
+    const res = await fetch(`/api/posts/calendar?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`, { credentials: 'include' });
+    weeklyPosts = await res.json();
+  } catch(e) { weeklyPosts = []; }
+
+  renderWeeklyGrid(start);
+}
+
+function renderWeeklyGrid(weekStart) {
+  const grid = document.getElementById('weekly-grid');
+  if (!grid) return;
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  grid.innerHTML = '';
+
+  for (let i = 0; i < 7; i++) {
+    const dayDate = new Date(weekStart);
+    dayDate.setDate(weekStart.getDate() + i);
+    const dateStr = dayDate.toISOString().substring(0, 10);
+    const isToday = dateStr === new Date().toISOString().substring(0, 10);
+
+    const dayPosts = weeklyPosts.filter(p => {
+      const sched = p.scheduled_at || '';
+      return sched.startsWith(dateStr);
+    });
+
+    const col = document.createElement('div');
+    col.style.cssText = `background:var(--surface);border:1px solid ${isToday ? 'var(--accent)' : 'var(--border)'};border-radius:var(--radius);min-height:200px;padding:10px;`;
+    col.dataset.date = dateStr;
+
+    col.innerHTML = `
+      <div style="font-size:11px;font-weight:600;color:${isToday ? 'var(--accent)' : 'var(--text-dim)'};text-transform:uppercase;margin-bottom:8px;">${days[i]}<br><span style="font-size:14px;font-weight:700;color:var(--text);">${dayDate.getDate()}</span></div>
+      <div class="weekly-posts-container" data-date="${dateStr}">
+        ${dayPosts.map(p => renderWeeklyPill(p)).join('')}
+      </div>`;
+
+    grid.appendChild(col);
+  }
+
+  // Setup drag-and-drop with interact.js
+  if (window.interact) {
+    interact('.weekly-pill').draggable({
+      listeners: {
+        start(e) { e.target.style.opacity = '0.5'; },
+        end(e) { e.target.style.opacity = '1'; }
+      }
+    });
+
+    interact('.weekly-posts-container').dropzone({
+      accept: '.weekly-pill',
+      overlap: 0.5,
+      ondrop(e) {
+        const postId = e.relatedTarget.dataset.postId;
+        const newDate = e.currentTarget.dataset.date;
+        // Keep same time, change date
+        const post = weeklyPosts.find(p => p.id === postId);
+        if (!post || !newDate) return;
+        const oldTime = (post.scheduled_at || new Date().toISOString()).substring(11);
+        const newIso = `${newDate}T${oldTime}`;
+        fetch(`/api/posts/${postId}/reschedule`, {
+          method: 'PATCH', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scheduled_at: newIso })
+        }).then(() => { showToast('Post rescheduled', 'success'); loadWeeklyCalendar(); });
+      }
+    });
+  }
+}
+
+function renderWeeklyPill(post) {
+  const platform = post.platform || (post.account_ids||[])[0] || 'unknown';
+  const bg = PLATFORM_BG[platform] || '#333';
+  const preview = (post.content||'').substring(0,40);
+  const time = (post.scheduled_at||'').substring(11,16);
+  return `<div class="weekly-pill" data-post-id="${post.id}" style="background:${bg};color:#fff;border-radius:5px;padding:5px 7px;margin-bottom:5px;font-size:11px;cursor:grab;user-select:none;">
+    <div style="font-weight:600;opacity:0.8;">${time} ${platform}</div>
+    <div style="opacity:0.9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(preview)}</div>
+  </div>`;
+}
+
+// ===== HASHTAG MANAGER =====
+let allHashtagSets = [];
+let editingHashtagId = null;
+
+async function loadHashtagSets() {
+  try {
+    const res = await fetch('/api/hashtags', { credentials: 'include' });
+    allHashtagSets = await res.json();
+    renderHashtagCards();
+  } catch(e) { console.error('Hashtag load error', e); }
+}
+
+async function loadHashtagSetsForModal() {
+  try {
+    const res = await fetch('/api/hashtags', { credentials: 'include' });
+    const sets = await res.json();
+    const sel = document.getElementById('post-hashtag-set');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">None</option>' + sets.map(s =>
+      `<option value="${s.id}" data-tags="${escapeHtml((s.tags||[]).join(' '))}">${escapeHtml(s.name)}</option>`
+    ).join('');
+  } catch(e) {}
+}
+
+function applyHashtagSet() {
+  const sel = document.getElementById('post-hashtag-set');
+  const ta = document.getElementById('post-content');
+  if (!sel || !ta) return;
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt || !opt.dataset.tags) return;
+  const tags = opt.dataset.tags;
+  if (tags) {
+    ta.value = ta.value.trimEnd() + (ta.value ? '\n\n' : '') + tags;
+  }
+}
+
+function renderHashtagCards() {
+  const grid = document.getElementById('hashtags-grid');
+  if (!grid) return;
+  if (!allHashtagSets.length) {
+    grid.innerHTML = '<div class="empty-state"><p>No hashtag sets yet.</p></div>';
+    return;
+  }
+  const platformColors = { x: '#555', linkedin: '#0077b5', instagram: '#e1306c', tiktok: '#00b0a0', youtube: '#cc0000', facebook: '#1a4f9e' };
+  grid.innerHTML = allHashtagSets.map(s => `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+      <div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:10px;">
+        <h3 style="font-size:14px;font-weight:600;">${escapeHtml(s.name)}</h3>
+        <div style="display:flex;gap:4px;">
+          <button class="btn btn-ghost btn-sm" onclick="editHashtagSet('${s.id}')">Edit</button>
+          <button class="btn btn-sm" style="color:var(--red);background:rgba(239,68,68,0.1);" onclick="deleteHashtagSet('${s.id}')">Del</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">
+        ${(s.platforms||[]).map(p => `<span style="background:${platformColors[p]||'#333'};color:#fff;font-size:10px;padding:2px 8px;border-radius:12px;">${p}</span>`).join('')}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;">
+        ${(s.tags||[]).map(t => `<span style="background:var(--accent-dim);color:var(--accent);font-size:11px;padding:2px 8px;border-radius:12px;font-family:monospace;">${escapeHtml(t)}</span>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function openHashtagModal(id) {
+  editingHashtagId = id || null;
+  document.getElementById('hashtag-modal-title').textContent = id ? 'Edit Hashtag Set' : 'New Hashtag Set';
+  document.getElementById('hashtag-edit-id').value = id || '';
+  if (id) {
+    const set = allHashtagSets.find(s => s.id === id);
+    if (set) {
+      document.getElementById('hashtag-name').value = set.name || '';
+      document.getElementById('hashtag-tags').value = (set.tags||[]).join(' ');
+      document.querySelectorAll('#hashtag-platform-checks input').forEach(cb => {
+        cb.checked = (set.platforms||[]).includes(cb.value);
+      });
+    }
+  } else {
+    document.getElementById('hashtag-name').value = '';
+    document.getElementById('hashtag-tags').value = '';
+    document.querySelectorAll('#hashtag-platform-checks input').forEach(cb => cb.checked = false);
+  }
+  document.getElementById('hashtag-modal').style.display = 'flex';
+}
+
+function editHashtagSet(id) { openHashtagModal(id); }
+
+function closeHashtagModal() {
+  document.getElementById('hashtag-modal').style.display = 'none';
+}
+
+async function submitHashtagSet() {
+  const name = document.getElementById('hashtag-name').value.trim();
+  const tagsRaw = document.getElementById('hashtag-tags').value.trim();
+  const tags = tagsRaw.split(/[\s,]+/).filter(t => t);
+  const platforms = Array.from(document.querySelectorAll('#hashtag-platform-checks input:checked')).map(cb => cb.value);
+  if (!name) { showToast('Name required', 'error'); return; }
+  const payload = { name, tags, platforms };
+  const editId = document.getElementById('hashtag-edit-id').value;
+  try {
+    let res;
+    if (editId) {
+      res = await fetch(`/api/hashtags/${editId}`, { method: 'PUT', credentials: 'include', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    } else {
+      res = await fetch('/api/hashtags', { method: 'POST', credentials: 'include', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    }
+    await res.json();
+    showToast('Saved!', 'success');
+    closeHashtagModal();
+    loadHashtagSets();
+    loadHashtagSetsForModal();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deleteHashtagSet(id) {
+  if (!confirm('Delete this hashtag set?')) return;
+  try {
+    await fetch(`/api/hashtags/${id}`, { method: 'DELETE', credentials: 'include' });
+    showToast('Deleted', 'success');
+    loadHashtagSets();
+    loadHashtagSetsForModal();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ===== LARRY CREATIVE INTELLIGENCE =====
+let larryInsightsData = null;
+let allHooks = [];
+
+function switchLarryTab(section, btn) {
+  document.querySelectorAll('.larry-section').forEach(s => s.style.display = 'none');
+  document.querySelectorAll('.larry-tab').forEach(b => {
+    b.style.color = 'var(--text-dim)';
+    b.style.borderBottomColor = 'transparent';
+  });
+  document.getElementById(`larry-section-${section}`).style.display = 'block';
+  btn.style.color = 'var(--accent)';
+  btn.style.borderBottomColor = 'var(--accent)';
+
+  if (section === 'performance' || section === 'recommendations') loadLarryInsights();
+  if (section === 'hooks') loadHooks();
+}
+
+async function loadLarryInsights() {
+  try {
+    const res = await fetch('/api/larry/insights', { credentials: 'include' });
+    larryInsightsData = await res.json();
+    renderPerformance();
+    renderRecommendations();
+  } catch(e) { console.error('Larry insights error', e); }
+}
+
+function renderPerformance() {
+  const el = document.getElementById('larry-performance-content');
+  if (!el || !larryInsightsData) return;
+  const d = larryInsightsData;
+  const topPosts = (d.topPosts||[]).slice(0,3).map(p => `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="font-size:11px;background:var(--accent-dim);color:var(--accent);padding:2px 8px;border-radius:12px;">${escapeHtml(p.platform||'')}</span>
+        <span style="font-size:12px;font-weight:600;color:var(--green);">⬆ ${p.total_engagement} engagements</span>
+      </div>
+      <p style="font-size:12px;color:var(--text-dim);">${escapeHtml(p.content||'')}</p>
+    </div>`).join('') || '<p style="color:var(--text-dim);font-size:13px;">No engagement data yet.</p>';
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;">
+        <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Best Platform</div>
+        <div style="font-size:22px;font-weight:700;color:var(--accent);">${d.bestPlatform || '—'}</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;">
+        <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Best Day</div>
+        <div style="font-size:22px;font-weight:700;color:var(--accent);">${d.bestDayOfWeek || '—'}</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;">
+        <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Best Hour</div>
+        <div style="font-size:22px;font-weight:700;color:var(--accent);">${d.bestHour !== null && d.bestHour !== undefined ? d.bestHour + ':00' : '—'}</div>
+      </div>
+    </div>
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Top Posts</h3>
+    ${topPosts}`;
+}
+
+function renderRecommendations() {
+  const el = document.getElementById('larry-recommendations-content');
+  if (!el || !larryInsightsData) return;
+  const recs = (larryInsightsData.recommendations || []).slice(0, 5);
+  el.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:14px;">Larry's Recommendations</h3>
+      ${recs.map(r => `<div style="display:flex;gap:10px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+        <span style="color:var(--accent);font-size:16px;">→</span>
+        <p style="font-size:13px;color:var(--text);line-height:1.5;">${escapeHtml(r)}</p>
+      </div>`).join('')}
+    </div>`;
+}
+
+async function larryGenerate() {
+  const topic = document.getElementById('larry-topic')?.value?.trim();
+  if (!topic) { showToast('Enter a topic first', 'error'); return; }
+  const client = document.getElementById('larry-client')?.value || '';
+  const contentType = document.getElementById('larry-content-type')?.value || 'thought_leadership';
+  const platforms = Array.from(document.querySelectorAll('#larry-platforms input:checked')).map(cb => cb.value);
+  if (!platforms.length) { showToast('Select at least one platform', 'error'); return; }
+
+  const btn = document.getElementById('larry-gen-btn');
+  btn.textContent = '✨ Generating...'; btn.disabled = true;
+  document.getElementById('larry-results-empty').style.display = 'none';
+
+  try {
+    const res = await fetch('/api/larry/generate', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic, client, platforms, content_type: contentType })
+    });
+    const data = await res.json();
+    const variations = data.variations || [];
+    const container = document.getElementById('larry-variations');
+    const results = document.getElementById('larry-results');
+
+    const platformBg = { x: '#111', linkedin: '#0d4f82', instagram: '#821040', tiktok: '#004f48', youtube: '#5a0000' };
+    container.innerHTML = variations.map((v, i) => `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span style="background:${platformBg[v.platform]||'#333'};color:#fff;font-size:11px;padding:3px 10px;border-radius:12px;font-weight:600;">${v.platform}</span>
+          <span style="font-size:11px;color:var(--text-dim);">Variation ${i+1}</span>
+        </div>
+        <p style="font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;margin-bottom:10px;">${escapeHtml(v.content||'')}</p>
+        ${(v.hashtag_suggestions||[]).length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">${v.hashtag_suggestions.map(t => `<span style="background:var(--accent-dim);color:var(--accent);font-size:11px;padding:2px 8px;border-radius:12px;font-family:monospace;">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+        <button class="btn btn-sm btn-ghost" onclick="addLarryToQueue(${i})" data-variation='${JSON.stringify(v).replace(/'/g, "&#39;")}'>+ Add to Queue</button>
+      </div>`).join('');
+
+    results.style.display = 'block';
+    document.getElementById('larry-results-empty').style.display = 'none';
+  } catch(e) { showToast('Generation failed: ' + e.message, 'error'); }
+  finally { btn.textContent = '✨ Generate'; btn.disabled = false; }
+}
+
+function addLarryToQueue(idx) {
+  const btn = document.querySelectorAll('#larry-variations button[data-variation]')[idx];
+  if (!btn) return;
+  try {
+    const v = JSON.parse(btn.dataset.variation.replace(/&#39;/g, "'"));
+    // Open new post modal with content pre-filled
+    openNewPost();
+    setTimeout(() => {
+      const ta = document.getElementById('post-content');
+      if (ta) ta.value = (v.content || '') + (v.hashtag_suggestions?.length ? '\n\n' + v.hashtag_suggestions.join(' ') : '');
+    }, 100);
+    showToast('Content added to new post modal', 'success');
+  } catch(e) { showToast('Failed to add to queue', 'error'); }
+}
+
+async function loadHooks() {
+  try {
+    const res = await fetch('/api/larry/hooks', { credentials: 'include' });
+    allHooks = await res.json();
+    filterHooks();
+  } catch(e) { console.error('Hooks load error', e); }
+}
+
+function filterHooks() {
+  const query = (document.getElementById('hook-search')?.value || '').toLowerCase();
+  const filtered = allHooks.filter(h =>
+    (h.text||'').toLowerCase().includes(query) ||
+    (h.platform||'').toLowerCase().includes(query) ||
+    (h.client||'').toLowerCase().includes(query)
+  );
+  const list = document.getElementById('hook-list');
+  if (!list) return;
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty-state"><p>No hooks yet. Engage with posts to auto-save high-performing hooks.</p></div>';
+    return;
+  }
+  list.innerHTML = filtered.map(h => `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:12px;">
+      <div style="flex:1;">
+        <p style="font-size:13px;color:var(--text);margin-bottom:4px;">${escapeHtml(h.text||'')}</p>
+        <div style="display:flex;gap:8px;font-size:11px;color:var(--text-dim);">
+          <span>${h.platform||'—'}</span>
+          <span>|</span>
+          <span>${h.client||'—'}</span>
+          <span>|</span>
+          <span>Score: <strong style="color:var(--accent);">${h.engagement_score||0}</strong></span>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="useHook('${escapeHtml(h.text||'')}')">Use This Hook</button>
+    </div>`).join('');
+}
+
+function useHook(text) {
+  // Switch to Larry generator and pre-fill topic
+  const larryTab = document.getElementById('nav-tab-larry');
+  if (larryTab) { switchTab('larry', larryTab); }
+  // Switch to generator sub-tab
+  setTimeout(() => {
+    const genBtn = document.querySelector('.larry-tab');
+    if (genBtn) switchLarryTab('generator', genBtn);
+    const ta = document.getElementById('larry-topic');
+    if (ta) ta.value = text;
+  }, 100);
+}
+
+// ===== POPULATE LARRY CLIENT DROPDOWN =====
+async function populateLarryClients() {
+  try {
+    const res = await fetch('/api/clients', { credentials: 'include' });
+    const clients = await res.json();
+    const sel = document.getElementById('larry-client');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Any client</option>' + clients.map(c =>
+      `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name||c.id)}</option>`
+    ).join('');
+  } catch(e) {}
+}
+
 </script>
 </body>
 </html>

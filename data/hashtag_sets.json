@@ -1,0 +1,83 @@
+[
+  {
+    "id": "ai-tech-sa",
+    "name": "AI & Tech SA",
+    "tags": [
+      "#AI",
+      "#TechSA",
+      "#ArtificialIntelligence",
+      "#SouthAfricaTech",
+      "#FutureTech"
+    ],
+    "platforms": [
+      "x",
+      "linkedin"
+    ]
+  },
+  {
+    "id": "singularity-sa",
+    "name": "Singularity SA",
+    "tags": [
+      "#SingularitySA",
+      "#SUSA",
+      "#ExponentialTech",
+      "#FutureAfrica",
+      "#Singularity"
+    ],
+    "platforms": [
+      "x",
+      "linkedin",
+      "instagram"
+    ]
+  },
+  {
+    "id": "podpal",
+    "name": "PodPal",
+    "tags": [
+      "#PodPal",
+      "#Podcasting",
+      "#PodcastGrowth",
+      "#SouthAfricaPodcast",
+      "#ContentCreator"
+    ],
+    "platforms": [
+      "x",
+      "linkedin",
+      "tiktok"
+    ]
+  },
+  {
+    "id": "mann-made",
+    "name": "Mann Made",
+    "tags": [
+      "#MannMade",
+      "#AIVideo",
+      "#CreativeAgency",
+      "#SouthAfrica",
+      "#VideoProduction"
+    ],
+    "platforms": [
+      "x",
+      "linkedin",
+      "instagram",
+      "tiktok"
+    ]
+  },
+  {
+    "id": "the-exponentials",
+    "name": "The Exponentials",
+    "tags": [
+      "#TheExponentials",
+      "#Exponential",
+      "#AIAfrica",
+      "#TechAfrica",
+      "#Innovation"
+    ],
+    "platforms": [
+      "x",
+      "linkedin",
+      "tiktok",
+      "youtube"
+    ]
+  }
+]

@@ -295,19 +295,30 @@ async def get_posts(status: str = "", account: str = "", platform: str = ""):
 @app.post("/api/posts")
 async def create_post(request: Request):
     body = await request.json()
+    user = get_current_user(request)
+    role = (user or {}).get("role", "viewer")
+    # Approval workflow: editors need approval, admins go straight to scheduled
+    if role == "editor":
+        initial_status = "pending_approval"
+    else:
+        initial_status = "scheduled" if body.get("scheduled_at") else "draft"
+
     post = {
         "id": str(uuid.uuid4())[:8],
         "account_ids": body.get("account_ids", []),
         "content": body.get("content", ""),
         "media": body.get("media", []),
         "media_type": body.get("media_type", "none"),
-        "status": "scheduled" if body.get("scheduled_at") else "draft",
+        "status": initial_status,
         "per_account_status": {aid: "pending" for aid in body.get("account_ids", [])},
         "scheduled_at": body.get("scheduled_at"),
         "posted_at": None,
         "created_at": datetime.now().isoformat(),
         "tags": body.get("tags", []),
-        "campaign": body.get("campaign")
+        "campaign": body.get("campaign"),
+        "client_id": body.get("client_id", ""),
+        "rejection_reason": None,
+        "platform": body.get("platform", ""),
     }
     posts = load_queue()
     posts.append(post)
@@ -1226,6 +1237,525 @@ async def retry_post(log_id: int):
         api_key=api_key
     )
     return result
+
+
+# ===== APPROVAL WORKFLOW =====
+
+@app.get("/api/posts/pending")
+async def get_pending_posts():
+    posts = load_queue()
+    pending = [p for p in posts if p.get("status") == "pending_approval"]
+    return pending
+
+
+@app.post("/api/posts/{post_id}/approve")
+async def approve_post(post_id: str):
+    posts = load_queue()
+    for p in posts:
+        if p["id"] == post_id:
+            p["status"] = "scheduled"
+            p["rejection_reason"] = None
+            save_queue(posts)
+            return {"ok": True, "post": p}
+    raise HTTPException(404, "Post not found")
+
+
+@app.post("/api/posts/{post_id}/reject")
+async def reject_post(post_id: str, request: Request):
+    body = await request.json()
+    reason = body.get("reason", "")
+    posts = load_queue()
+    for p in posts:
+        if p["id"] == post_id:
+            p["status"] = "rejected"
+            p["rejection_reason"] = reason
+            save_queue(posts)
+            return {"ok": True, "post": p}
+    raise HTTPException(404, "Post not found")
+
+
+# ===== WEEKLY CALENDAR =====
+
+@app.get("/api/posts/calendar")
+async def posts_calendar(start: str = "", end: str = ""):
+    posts = load_queue()
+    scheduled = [p for p in posts if p.get("status") in ("scheduled", "posted", "pending_approval")]
+    if start:
+        try:
+            start_dt = datetime.fromisoformat(start)
+            scheduled = [p for p in scheduled if p.get("scheduled_at") and datetime.fromisoformat(p["scheduled_at"]) >= start_dt]
+        except Exception:
+            pass
+    if end:
+        try:
+            end_dt = datetime.fromisoformat(end)
+            scheduled = [p for p in scheduled if p.get("scheduled_at") and datetime.fromisoformat(p["scheduled_at"]) <= end_dt]
+        except Exception:
+            pass
+    return scheduled
+
+
+@app.patch("/api/posts/{post_id}/reschedule")
+async def reschedule_post(post_id: str, request: Request):
+    body = await request.json()
+    new_time = body.get("scheduled_at", "")
+    if not new_time:
+        raise HTTPException(400, "scheduled_at required")
+    posts = load_queue()
+    for p in posts:
+        if p["id"] == post_id:
+            p["scheduled_at"] = new_time
+            if p["status"] == "draft":
+                p["status"] = "scheduled"
+            save_queue(posts)
+            return {"ok": True, "post": p}
+    raise HTTPException(404, "Post not found")
+
+
+# ===== PER-POST ANALYTICS =====
+
+def _get_analytics_db():
+    db_path = BASE / "data" / "post_log.db"
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    db = __import__("sqlite3").connect(str(db_path))
+    db.row_factory = __import__("sqlite3").Row
+    # Ensure columns exist
+    for col, coltype in [("likes", "INTEGER DEFAULT 0"), ("reposts", "INTEGER DEFAULT 0"), ("comments", "INTEGER DEFAULT 0")]:
+        try:
+            db.execute(f"ALTER TABLE post_log ADD COLUMN {col} {coltype}")
+            db.commit()
+        except Exception:
+            pass
+    return db
+
+
+@app.get("/api/posts/{post_id}/detail")
+async def post_detail(post_id: str):
+    # Try to parse as integer (post_log ID)
+    try:
+        log_id = int(post_id)
+    except ValueError:
+        raise HTTPException(400, "post_id must be integer for detail view")
+
+    db = _get_analytics_db()
+    row = db.execute("SELECT * FROM post_log WHERE id=?", (log_id,)).fetchone()
+    if not row:
+        raise HTTPException(404, "Post not found")
+    post = dict(row)
+
+    # Fetch retry history
+    retries = db.execute(
+        "SELECT * FROM retry_queue WHERE post_log_id=? ORDER BY retry_at DESC",
+        (log_id,)
+    ).fetchall()
+    post["retry_history"] = [dict(r) for r in retries]
+    return post
+
+
+@app.patch("/api/posts/{post_id}/engagement")
+async def update_engagement(post_id: str, request: Request):
+    try:
+        log_id = int(post_id)
+    except ValueError:
+        raise HTTPException(400, "post_id must be integer")
+
+    body = await request.json()
+    likes = int(body.get("likes", 0))
+    reposts = int(body.get("reposts", 0))
+    comments = int(body.get("comments", 0))
+
+    db = _get_analytics_db()
+    db.execute(
+        "UPDATE post_log SET likes=?, reposts=?, comments=?, updated_at=datetime('now') WHERE id=?",
+        (likes, reposts, comments, log_id)
+    )
+    db.commit()
+
+    # Auto-save hook if total engagement >= 50
+    total = likes + reposts + comments
+    if total >= 50:
+        row = db.execute("SELECT * FROM post_log WHERE id=?", (log_id,)).fetchone()
+        if row:
+            row = dict(row)
+            words = (row.get("content") or "").split()[:10]
+            hook_text = " ".join(words)
+            if hook_text:
+                hooks = _load_hooks()
+                # Check if not already in library
+                existing = [h for h in hooks if h.get("text", "").startswith(hook_text[:30])]
+                if not existing:
+                    import uuid as _uuid
+                    hook = {
+                        "id": str(_uuid.uuid4())[:8],
+                        "text": hook_text,
+                        "platform": row.get("platform", ""),
+                        "engagement_score": total,
+                        "date_used": row.get("created_at", ""),
+                        "client": row.get("client_id", "")
+                    }
+                    hooks.append(hook)
+                    _save_hooks(hooks)
+
+    return {"ok": True, "likes": likes, "reposts": reposts, "comments": comments}
+
+
+# ===== HASHTAG MANAGER =====
+
+HASHTAG_SETS_FILE = BASE / "data" / "hashtag_sets.json"
+
+DEFAULT_HASHTAG_SETS = [
+    {"id": "ai-tech-sa", "name": "AI & Tech SA", "tags": ["#AI", "#TechSA", "#ArtificialIntelligence", "#SouthAfricaTech", "#FutureTech"], "platforms": ["x", "linkedin"]},
+    {"id": "singularity-sa", "name": "Singularity SA", "tags": ["#SingularitySA", "#SUSA", "#ExponentialTech", "#FutureAfrica", "#Singularity"], "platforms": ["x", "linkedin", "instagram"]},
+    {"id": "podpal", "name": "PodPal", "tags": ["#PodPal", "#Podcasting", "#PodcastGrowth", "#SouthAfricaPodcast", "#ContentCreator"], "platforms": ["x", "linkedin", "tiktok"]},
+    {"id": "mann-made", "name": "Mann Made", "tags": ["#MannMade", "#AIVideo", "#CreativeAgency", "#SouthAfrica", "#VideoProduction"], "platforms": ["x", "linkedin", "instagram", "tiktok"]},
+    {"id": "the-exponentials", "name": "The Exponentials", "tags": ["#TheExponentials", "#Exponential", "#AIAfrica", "#TechAfrica", "#Innovation"], "platforms": ["x", "linkedin", "tiktok", "youtube"]},
+]
+
+
+def _load_hashtag_sets() -> list:
+    if not HASHTAG_SETS_FILE.exists():
+        HASHTAG_SETS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        HASHTAG_SETS_FILE.write_text(json.dumps(DEFAULT_HASHTAG_SETS, indent=2))
+    return json.loads(HASHTAG_SETS_FILE.read_text())
+
+
+def _save_hashtag_sets(sets: list):
+    HASHTAG_SETS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    HASHTAG_SETS_FILE.write_text(json.dumps(sets, indent=2))
+
+
+@app.get("/api/hashtags")
+async def get_hashtags():
+    return _load_hashtag_sets()
+
+
+@app.post("/api/hashtags")
+async def create_hashtag_set(request: Request):
+    body = await request.json()
+    sets = _load_hashtag_sets()
+    if not body.get("id"):
+        body["id"] = str(uuid.uuid4())[:8]
+    sets.append(body)
+    _save_hashtag_sets(sets)
+    return body
+
+
+@app.put("/api/hashtags/{set_id}")
+async def update_hashtag_set(set_id: str, request: Request):
+    body = await request.json()
+    sets = _load_hashtag_sets()
+    for i, s in enumerate(sets):
+        if s["id"] == set_id:
+            body["id"] = set_id
+            sets[i] = body
+            _save_hashtag_sets(sets)
+            return body
+    raise HTTPException(404, "Hashtag set not found")
+
+
+@app.delete("/api/hashtags/{set_id}")
+async def delete_hashtag_set(set_id: str):
+    sets = _load_hashtag_sets()
+    new_sets = [s for s in sets if s["id"] != set_id]
+    if len(new_sets) == len(sets):
+        raise HTTPException(404, "Hashtag set not found")
+    _save_hashtag_sets(new_sets)
+    return {"ok": True}
+
+
+# ===== LARRY CREATIVE INTELLIGENCE =====
+
+HOOK_LIBRARY_FILE = BASE / "data" / "hook_library.json"
+
+LARRY_SYSTEM_PROMPT = """You are Larry, a senior social media strategist for Mann Made, a South African digital agency. You create content that sounds human, specific, and relevant - not corporate or AI-generated. Rules: no em dashes, no AI buzzwords (delve, tapestry, vibrant, leverage, transformative), no sycophancy, no rule-of-three patterns. Write like a smart person talking to their industry, not a brand announcement. Be specific. Have opinions. South African context where relevant."""
+
+
+def _load_hooks() -> list:
+    if not HOOK_LIBRARY_FILE.exists():
+        HOOK_LIBRARY_FILE.parent.mkdir(parents=True, exist_ok=True)
+        HOOK_LIBRARY_FILE.write_text("[]")
+    return json.loads(HOOK_LIBRARY_FILE.read_text())
+
+
+def _save_hooks(hooks: list):
+    HOOK_LIBRARY_FILE.parent.mkdir(parents=True, exist_ok=True)
+    HOOK_LIBRARY_FILE.write_text(json.dumps(hooks, indent=2))
+
+
+def _get_anthropic_key() -> str:
+    key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not key:
+        for path in [Path.home() / ".openclaw/secrets.json", BASE / "secrets.json"]:
+            if path.exists():
+                try:
+                    data = json.loads(path.read_text())
+                    key = data.get("anthropic", {}).get("apiKey", "")
+                    if key:
+                        break
+                except Exception:
+                    pass
+    return key
+
+
+LARRY_TEMPLATES = {
+    "thought_leadership": {
+        "x": "Here's something most {industry} people get wrong: {topic}. The real issue? {insight}. What's your take?",
+        "linkedin": "{topic} - this is something the industry keeps getting backwards.\n\nHere's what I've noticed after working with clients across South Africa: {insight}\n\nThe data backs it up. {evidence}\n\nWhat's holding most people back isn't {common_excuse} - it's {real_reason}.\n\nThoughts?",
+        "instagram": "Unpopular opinion: {topic}\n\n{insight}\n\nSave this if it changes how you think about {industry}.",
+        "tiktok": "Nobody talks about this in {industry}: {topic}"
+    },
+    "product_promo": {
+        "x": "We built {topic} for one reason: {reason}. If you've ever struggled with {problem}, this is for you.",
+        "linkedin": "After months of work, {topic} is ready.\n\nWe built it because {reason}.\n\nThe problem it solves: {problem}\n\nHow it works: {how}\n\nIf this sounds relevant to your work, let's talk.",
+        "instagram": "{topic} is live. Here's why we built it: {reason}",
+        "tiktok": "We built {topic} and it solves {problem}"
+    },
+    "event_announcement": {
+        "x": "{topic} is happening {date}. Here's what you'll get out of it: {value}. Limited spots.",
+        "linkedin": "{topic} - mark your calendar.\n\nDate: {date}\nWhat it is: {description}\nWhy come: {value}\n\nRegistration link in bio.",
+        "instagram": "{topic} is coming. {date}. You don't want to miss this.",
+        "tiktok": "{topic} event - {date}. Here's what's happening:"
+    },
+    "engagement_hook": {
+        "x": "Quick question for {industry} people: {question}",
+        "linkedin": "I've been thinking about {topic} a lot lately.\n\n{question}\n\nGenuinely curious what you think - especially if you've seen this play out differently.",
+        "instagram": "{question}\n\nDrop your answer below.",
+        "tiktok": "Tell me in the comments: {question}"
+    },
+    "behind_the_scenes": {
+        "x": "Behind the scenes at {topic}: {insight}. This is what building actually looks like.",
+        "linkedin": "Real talk about {topic}:\n\n{insight}\n\nMost people only see the polished version. Here's what it actually takes:\n\n{reality}\n\nBuilding in public because the process matters as much as the result.",
+        "instagram": "Behind the scenes: {topic}. {insight}",
+        "tiktok": "What {topic} actually looks like behind the scenes:"
+    }
+}
+
+
+@app.post("/api/larry/generate")
+async def larry_generate(request: Request):
+    import httpx
+    body = await request.json()
+    topic = body.get("topic", "")
+    client_name = body.get("client", "")
+    platforms = body.get("platforms", ["x", "linkedin"])
+    content_type = body.get("content_type", "thought_leadership")
+
+    if not topic:
+        raise HTTPException(400, "topic is required")
+
+    api_key = _get_anthropic_key()
+
+    platform_rules = {
+        "x": "Write a punchy tweet under 280 characters. Lead with the hook. No filler. Single thought, clear opinion.",
+        "linkedin": "Write a LinkedIn post of 150-300 words. No day/week openers. Start with the observation. Short paragraphs. End with a question or call to action.",
+        "instagram": "Write an Instagram caption, 2-5 sentences. Visual and specific. 3-5 hashtags at the end.",
+        "tiktok": "Write a TikTok caption, hook-first, max 3 sentences. Punchy. Make them want to watch."
+    }
+
+    variations = []
+
+    if api_key:
+        try:
+            content_type_label = content_type.replace("_", " ").title()
+            prompt = f"""Generate 3 distinct social media post variations for the following:
+
+Topic/Brief: {topic}
+Client: {client_name or "Mann Made"}
+Content Type: {content_type_label}
+Platforms: {', '.join(platforms)}
+
+Platform rules:
+{chr(10).join(f"- {p}: {platform_rules.get(p, 'Keep it concise and engaging.')}" for p in platforms)}
+
+Return EXACTLY this JSON format (no markdown, no explanation):
+{{
+  "variations": [
+    {{
+      "platform": "{platforms[0]}",
+      "content": "post content here",
+      "hashtag_suggestions": ["#tag1", "#tag2"]
+    }}
+  ]
+}}
+
+Generate one variation per platform listed. Make each one distinct in angle and tone."""
+
+            async with httpx.AsyncClient(timeout=30) as client:
+                resp = await client.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers={
+                        "x-api-key": api_key,
+                        "anthropic-version": "2023-06-01",
+                        "content-type": "application/json"
+                    },
+                    json={
+                        "model": "claude-haiku-4-5",
+                        "max_tokens": 1500,
+                        "system": LARRY_SYSTEM_PROMPT,
+                        "messages": [{"role": "user", "content": prompt}]
+                    }
+                )
+            if resp.status_code == 200:
+                text = resp.json()["content"][0]["text"].strip()
+                # Parse JSON from response
+                import re
+                json_match = re.search(r'\{.*\}', text, re.DOTALL)
+                if json_match:
+                    parsed = json.loads(json_match.group())
+                    variations = parsed.get("variations", [])
+        except Exception as e:
+            pass  # Fall through to templates
+
+    # Fallback to smart templates
+    if not variations:
+        ct_key = content_type.replace(" ", "_").lower()
+        templates = LARRY_TEMPLATES.get(ct_key, LARRY_TEMPLATES.get("thought_leadership", {}))
+        hashtag_map = {
+            "x": ["#Innovation", "#SouthAfrica"],
+            "linkedin": ["#Leadership", "#SouthAfrica", "#Business"],
+            "instagram": ["#BehindTheScenes", "#MannMade", "#SouthAfrica"],
+            "tiktok": ["#LearnOnTikTok", "#SouthAfrica"]
+        }
+        for platform in platforms:
+            template = templates.get(platform, f"Sharing thoughts on {topic}. {'{insight}'}")
+            content = template.replace("{topic}", topic).replace("{industry}", "our industry").replace(
+                "{insight}", f"the real story with {topic}").replace("{question}", f"What do you think about {topic}?").replace(
+                "{reason}", "we saw a gap").replace("{problem}", "the usual friction").replace(
+                "{how}", "by keeping it simple").replace("{evidence}", "the numbers show it").replace(
+                "{real_reason}", "execution").replace("{common_excuse}", "resources").replace(
+                "{date}", "soon").replace("{description}", topic).replace("{value}", "practical insights").replace(
+                "{reality}", "long hours and honest feedback").replace("{description}", topic)
+            variations.append({
+                "platform": platform,
+                "content": content,
+                "hashtag_suggestions": hashtag_map.get(platform, ["#SouthAfrica"])
+            })
+
+    return {"variations": variations, "topic": topic, "content_type": content_type}
+
+
+@app.get("/api/larry/insights")
+async def larry_insights():
+    db = _get_analytics_db()
+
+    try:
+        rows = db.execute(
+            "SELECT *, (COALESCE(likes,0)+COALESCE(reposts,0)+COALESCE(comments,0)) as total_engagement FROM post_log WHERE (COALESCE(likes,0)+COALESCE(reposts,0)+COALESCE(comments,0)) > 0 ORDER BY total_engagement DESC"
+        ).fetchall()
+    except Exception:
+        return {"topPosts": [], "bottomPosts": [], "bestPlatform": None, "bestDayOfWeek": None, "bestHour": None, "hookPatterns": {}, "recommendations": ["Start tracking engagement to see insights here."]}
+
+    posts = [dict(r) for r in rows]
+
+    if not posts:
+        return {
+            "topPosts": [],
+            "bottomPosts": [],
+            "bestPlatform": None,
+            "bestDayOfWeek": None,
+            "bestHour": None,
+            "hookPatterns": {"top": [], "bottom": []},
+            "recommendations": ["No engagement data yet. Update post engagement to see insights."]
+        }
+
+    # By platform
+    platform_eng = {}
+    platform_count = {}
+    for p in posts:
+        pl = p.get("platform", "unknown")
+        platform_eng[pl] = platform_eng.get(pl, 0) + p.get("total_engagement", 0)
+        platform_count[pl] = platform_count.get(pl, 0) + 1
+    platform_avg = {pl: platform_eng[pl] / platform_count[pl] for pl in platform_eng}
+    best_platform = max(platform_avg, key=platform_avg.get) if platform_avg else None
+
+    # By day of week
+    day_eng = {}
+    day_count = {}
+    days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    for p in posts:
+        ca = p.get("created_at", "")
+        if ca:
+            try:
+                dt = datetime.fromisoformat(ca)
+                dow = dt.weekday()
+                day_eng[dow] = day_eng.get(dow, 0) + p.get("total_engagement", 0)
+                day_count[dow] = day_count.get(dow, 0) + 1
+            except Exception:
+                pass
+    day_avg = {d: day_eng[d] / day_count[d] for d in day_eng}
+    best_dow_idx = max(day_avg, key=day_avg.get) if day_avg else None
+    best_day = days_of_week[best_dow_idx] if best_dow_idx is not None else None
+
+    # By hour
+    hour_eng = {}
+    hour_count = {}
+    for p in posts:
+        ca = p.get("created_at", "")
+        if ca:
+            try:
+                dt = datetime.fromisoformat(ca)
+                h = dt.hour
+                hour_eng[h] = hour_eng.get(h, 0) + p.get("total_engagement", 0)
+                hour_count[h] = hour_count.get(h, 0) + 1
+            except Exception:
+                pass
+    hour_avg = {h: hour_eng[h] / hour_count[h] for h in hour_eng}
+    best_hour = max(hour_avg, key=hour_avg.get) if hour_avg else None
+
+    # Hook patterns
+    top_5 = posts[:5]
+    bottom_5 = posts[-5:]
+    top_hooks = [" ".join((p.get("content") or "").split()[:8]) for p in top_5]
+    bottom_hooks = [" ".join((p.get("content") or "").split()[:8]) for p in bottom_5]
+
+    # Recommendations
+    recommendations = []
+    if best_platform:
+        recommendations.append(f"Post more on {best_platform} - it gets the highest engagement on average.")
+    if best_day:
+        recommendations.append(f"{best_day} is your best day for engagement. Schedule key posts for then.")
+    if best_hour is not None:
+        recommendations.append(f"Posts at {best_hour}:00 perform best. Aim for that window.")
+    if not recommendations:
+        recommendations = ["Keep posting consistently to build engagement data."]
+
+    return {
+        "topPosts": [{"id": p["id"], "content": (p.get("content") or "")[:120], "platform": p.get("platform"), "total_engagement": p.get("total_engagement", 0)} for p in top_5],
+        "bottomPosts": [{"id": p["id"], "content": (p.get("content") or "")[:120], "platform": p.get("platform"), "total_engagement": p.get("total_engagement", 0)} for p in bottom_5],
+        "bestPlatform": best_platform,
+        "bestDayOfWeek": best_day,
+        "bestHour": best_hour,
+        "hookPatterns": {"top": top_hooks, "bottom": bottom_hooks},
+        "recommendations": recommendations
+    }
+
+
+@app.get("/api/larry/hooks")
+async def get_hooks():
+    hooks = _load_hooks()
+    hooks.sort(key=lambda h: h.get("engagement_score", 0), reverse=True)
+    return hooks
+
+
+@app.post("/api/larry/hooks")
+async def save_hook(request: Request):
+    body = await request.json()
+    hooks = _load_hooks()
+    hook = {
+        "id": body.get("id") or str(uuid.uuid4())[:8],
+        "text": body.get("text", ""),
+        "platform": body.get("platform", ""),
+        "engagement_score": int(body.get("engagement_score", 0)),
+        "date_used": body.get("date_used", datetime.now().isoformat()),
+        "client": body.get("client", "")
+    }
+    hooks.append(hook)
+    _save_hooks(hooks)
+    return hook
+
+
+# Initialise hashtag sets on startup
+_load_hashtag_sets()
 
 
 if __name__ == "__main__":
