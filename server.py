@@ -1,11 +1,20 @@
 """Mann Made Socializer Platform - server.py"""
-import json, uuid, subprocess, os, shutil
+import json, uuid, subprocess, os, shutil, sys, asyncio, re
 from datetime import datetime, date, timedelta
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form, Depends
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 import uvicorn
+
+# Clipper engine (sibling module)
+sys.path.insert(0, str(Path(__file__).parent.parent))
+try:
+    from clipper.engine import process_video as _clipper_process_video
+    _clipper_ok = True
+except Exception as _e:
+    print(f"[WARN] Clipper engine failed to load: {_e}")
+    _clipper_ok = False
 
 # Auth imports
 from auth import (
@@ -1756,6 +1765,230 @@ async def save_hook(request: Request):
 
 # Initialise hashtag sets on startup
 _load_hashtag_sets()
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CLIPPINGS — AI video clip generation
+# ═══════════════════════════════════════════════════════════════════════════════
+
+CLIPS_DIR        = BASE / "data" / "clips"
+CLIPS_UPLOADS    = CLIPS_DIR / "uploads"
+CLIPS_OUTPUT     = CLIPS_DIR / "output"
+CLIPS_JOBS       = CLIPS_DIR / "jobs"
+
+for _d in [CLIPS_UPLOADS, CLIPS_OUTPUT, CLIPS_JOBS]:
+    _d.mkdir(parents=True, exist_ok=True)
+
+
+def _clips_get_job(job_id: str) -> dict:
+    path = CLIPS_JOBS / f"{job_id}.json"
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text())
+
+
+def _clips_save_job(job_id: str, state: dict):
+    (CLIPS_JOBS / f"{job_id}.json").write_text(json.dumps(state, indent=2))
+
+
+def _clips_run_job(job_id: str, video_path: str, num_clips: int, anthropic_key: str):
+    """Blocking clip generation — called from a thread pool executor."""
+    output_dir = str(CLIPS_OUTPUT)
+    state = _clips_get_job(job_id)
+    try:
+        state["status"] = "transcribing"
+        _clips_save_job(job_id, state)
+
+        def _progress(msg: str):
+            st = _clips_get_job(job_id)
+            st["progress"] = msg
+            if "transcrib" in msg.lower():
+                st["status"] = "transcribing"
+            elif "finding" in msg.lower() or "ai" in msg.lower():
+                st["status"] = "detecting"
+            elif "cutting" in msg.lower() or "clip" in msg.lower():
+                st["status"] = "cutting"
+            _clips_save_job(job_id, st)
+
+        clips = _clipper_process_video(
+            video_path=video_path,
+            output_dir=output_dir,
+            num_clips=num_clips,
+            anthropic_key=anthropic_key or None,
+            progress_callback=_progress,
+        )
+
+        # Enrich with metadata
+        enriched = []
+        for c in clips:
+            clip_path = Path(c["clip_path"])
+            stat = clip_path.stat() if clip_path.exists() else None
+            enriched.append({
+                **c,
+                "id": clip_path.stem,
+                "filename": clip_path.name,
+                "created_at": datetime.fromtimestamp(stat.st_mtime).isoformat() if stat else datetime.now().isoformat(),
+            })
+
+        state["status"] = "done"
+        state["clips"] = enriched
+        state["progress"] = f"Done! Generated {len(enriched)} clips."
+        _clips_save_job(job_id, state)
+
+    except Exception as e:
+        state["status"] = "error"
+        state["error"] = str(e)
+        _clips_save_job(job_id, state)
+
+
+@app.post("/api/clips/process")
+async def clips_process(
+    request: Request,
+    file: UploadFile = File(None),
+):
+    if not _clipper_ok:
+        raise HTTPException(503, "Clipper engine not available")
+
+    job_id = str(uuid.uuid4())
+    num_clips = 5
+    anthropic_key = _get_anthropic_key()
+
+    if file and file.filename:
+        # File upload
+        safe_name = re.sub(r"[^a-zA-Z0-9._-]", "_", file.filename)
+        upload_path = CLIPS_UPLOADS / f"{job_id}_{safe_name}"
+        with open(upload_path, "wb") as f:
+            shutil.copyfileobj(file.file, f)
+        video_path = str(upload_path)
+    else:
+        # JSON body with local path
+        body = await request.json()
+        video_path = body.get("video_path", "")
+        num_clips = int(body.get("num_clips", 5))
+        if not video_path or not Path(video_path).exists():
+            raise HTTPException(400, "video_path not found")
+
+    state = {
+        "job_id": job_id,
+        "status": "queued",
+        "video_path": video_path,
+        "num_clips": num_clips,
+        "clips": [],
+        "error": None,
+        "progress": "Queued",
+        "created_at": datetime.now().isoformat(),
+    }
+    _clips_save_job(job_id, state)
+
+    loop = asyncio.get_event_loop()
+    loop.run_in_executor(
+        None,
+        _clips_run_job,
+        job_id,
+        video_path,
+        num_clips,
+        anthropic_key,
+    )
+
+    return {"job_id": job_id}
+
+
+@app.get("/api/clips/job/{job_id}")
+async def clips_job_status(job_id: str):
+    state = _clips_get_job(job_id)
+    if not state:
+        raise HTTPException(404, "Job not found")
+    return state
+
+
+@app.get("/api/clips/")
+async def clips_list():
+    clips = []
+    for f in sorted(CLIPS_OUTPUT.glob("*.mp4"), key=lambda x: x.stat().st_mtime, reverse=True):
+        stat = f.stat()
+        # Try to load metadata from matching job
+        meta = {"score": None, "reason": "", "title": f.stem}
+        for job_file in CLIPS_JOBS.glob("*.json"):
+            try:
+                job = json.loads(job_file.read_text())
+                for c in job.get("clips", []):
+                    if c.get("filename") == f.name:
+                        meta = c
+                        break
+            except Exception:
+                pass
+
+        clips.append({
+            "id": f.stem,
+            "title": meta.get("title", f.stem),
+            "filename": f.name,
+            "score": meta.get("score"),
+            "reason": meta.get("reason", ""),
+            "transcript_excerpt": meta.get("transcript_excerpt", ""),
+            "start": meta.get("start"),
+            "end": meta.get("end"),
+            "created_at": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+            "size_mb": round(stat.st_size / 1024 / 1024, 1),
+        })
+    return clips
+
+
+@app.get("/api/clips/file/{filename}")
+async def clips_file(filename: str):
+    """Serve a clip file for in-browser preview/download."""
+    safe = re.sub(r"[^a-zA-Z0-9._-]", "", filename)
+    path = CLIPS_OUTPUT / safe
+    if not path.exists():
+        raise HTTPException(404, "Clip not found")
+    return FileResponse(str(path), media_type="video/mp4")
+
+
+@app.delete("/api/clips/{clip_id}")
+async def clips_delete(clip_id: str):
+    safe_id = re.sub(r"[^a-zA-Z0-9_-]", "", clip_id)
+    # Find matching file
+    matches = list(CLIPS_OUTPUT.glob(f"{safe_id}*.mp4"))
+    if not matches:
+        raise HTTPException(404, "Clip not found")
+    for f in matches:
+        f.unlink(missing_ok=True)
+    return {"deleted": safe_id}
+
+
+@app.post("/api/clips/{clip_id}/queue")
+async def clips_add_to_queue(clip_id: str, request: Request):
+    """Add a clip to the video post queue."""
+    body = await request.json()
+    safe_id = re.sub(r"[^a-zA-Z0-9_-]", "", clip_id)
+    matches = list(CLIPS_OUTPUT.glob(f"{safe_id}*.mp4"))
+    if not matches:
+        raise HTTPException(404, "Clip not found")
+    clip_file = matches[0]
+
+    # Build a video queue entry (same structure as existing video_queue.json)
+    entry = {
+        "id": str(uuid.uuid4())[:8],
+        "clip_id": clip_id,
+        "filename": clip_file.name,
+        "filepath": str(clip_file),
+        "client_id": body.get("client_id", ""),
+        "platform": body.get("platform", ""),
+        "scheduled_at": body.get("scheduled_at", ""),
+        "caption": body.get("caption", ""),
+        "status": "pending",
+        "created_at": datetime.now().isoformat(),
+        "type": "clip",
+    }
+
+    # Append to video_queue.json
+    try:
+        queue = json.loads(VIDEO_QUEUE_FILE.read_text()) if VIDEO_QUEUE_FILE.exists() else []
+    except Exception:
+        queue = []
+    queue.append(entry)
+    VIDEO_QUEUE_FILE.write_text(json.dumps(queue, indent=2))
+
+    return entry
 
 
 if __name__ == "__main__":

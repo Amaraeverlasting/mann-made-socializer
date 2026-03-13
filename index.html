@@ -1002,6 +1002,7 @@
     <button class="nav-tab" id="nav-tab-weekly" onclick="switchTab('weekly', this)">Week View</button>
     <button class="nav-tab" id="nav-tab-hashtags" onclick="switchTab('hashtags', this)">Hashtags</button>
     <button class="nav-tab" id="nav-tab-larry" onclick="switchTab('larry', this)">🧠 Larry</button>
+    <button class="nav-tab" id="nav-tab-clippings" onclick="switchTab('clippings', this)">✂️ Clippings</button>
     <button class="nav-tab admin-only" id="tab-users" onclick="switchTab('users', this)" style="display:none">Users</button>
   </nav>
   <div class="header-right">
@@ -1936,6 +1937,7 @@ function switchTab(tab, btn) {
   if (tab === 'weekly') loadWeeklyCalendar();
   if (tab === 'hashtags') loadHashtagSets();
   if (tab === 'larry') { populateLarryClients(); }
+  if (tab === 'clippings') { initClippingsTab(); }
 }
 
 // ===== API CALLS =====
@@ -3777,6 +3779,342 @@ async function populateLarryClients() {
   } catch(e) {}
 }
 
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CLIPPINGS TAB
+// ═══════════════════════════════════════════════════════════════════════════
+
+let clippingsCurrentJobId = null;
+let clippingsPollTimer = null;
+
+function initClippingsTab() {
+  loadClipsLibrary();
+  // Drag-and-drop
+  const zone = document.getElementById('clips-dropzone');
+  if (!zone) return;
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f) { document.getElementById('clips-file-input').files = e.dataTransfer.files; handleClipFileSelected(f.name); }
+  });
+  document.getElementById('clips-file-input').addEventListener('change', e => {
+    if (e.target.files[0]) handleClipFileSelected(e.target.files[0].name);
+  });
+}
+
+function handleClipFileSelected(name) {
+  document.getElementById('clips-selected-file').textContent = '📁 ' + name;
+  document.getElementById('clips-dropzone-hint').textContent = name;
+}
+
+async function generateClips() {
+  const fileInput = document.getElementById('clips-file-input');
+  const localPath = document.getElementById('clips-local-path').value.trim();
+  const numClips = parseInt(document.getElementById('clips-num').value) || 5;
+  const btn = document.getElementById('clips-generate-btn');
+
+  if (!fileInput.files[0] && !localPath) {
+    alert('Please select a video file or paste a local path.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Processing…';
+  setClipsStatus('Uploading video…', 'info');
+
+  try {
+    let job_id;
+    if (fileInput.files[0]) {
+      const fd = new FormData();
+      fd.append('file', fileInput.files[0]);
+      const res = await fetch('/api/clips/process?num_clips=' + numClips, { method: 'POST', credentials: 'include', body: fd });
+      const data = await res.json();
+      job_id = data.job_id;
+    } else {
+      const res = await fetch('/api/clips/process', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ video_path: localPath, num_clips: numClips })
+      });
+      const data = await res.json();
+      job_id = data.job_id;
+    }
+
+    clippingsCurrentJobId = job_id;
+    setClipsStatus('Queued — starting transcription…', 'info');
+    clippingsPollTimer = setInterval(() => pollClipsJob(job_id, btn), 3000);
+  } catch(e) {
+    setClipsStatus('Error: ' + e.message, 'error');
+    btn.disabled = false;
+    btn.textContent = 'Generate Clips';
+  }
+}
+
+async function pollClipsJob(job_id, btn) {
+  try {
+    const res = await fetch('/api/clips/job/' + job_id, { credentials: 'include' });
+    const job = await res.json();
+
+    const statusMessages = {
+      queued: '⏳ Queued…',
+      transcribing: '🎙️ Transcribing audio…',
+      detecting: '🤖 AI finding best moments…',
+      cutting: '✂️ Cutting and captioning clips…',
+      done: '✅ Done!',
+      error: '❌ Error',
+    };
+
+    const msg = job.progress || statusMessages[job.status] || job.status;
+    setClipsStatus(msg, job.status === 'error' ? 'error' : 'info');
+
+    if (job.status === 'done') {
+      clearInterval(clippingsPollTimer);
+      btn.disabled = false;
+      btn.textContent = 'Generate Clips';
+      renderGeneratedClips(job.clips || []);
+      loadClipsLibrary();
+    } else if (job.status === 'error') {
+      clearInterval(clippingsPollTimer);
+      btn.disabled = false;
+      btn.textContent = 'Generate Clips';
+      setClipsStatus('Error: ' + (job.error || 'Unknown error'), 'error');
+    }
+  } catch(e) {
+    console.error('Poll error', e);
+  }
+}
+
+function setClipsStatus(msg, type) {
+  const el = document.getElementById('clips-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = type === 'error' ? 'var(--red, #f87171)' : 'var(--accent)';
+  el.style.display = msg ? 'block' : 'none';
+}
+
+function renderGeneratedClips(clips) {
+  const container = document.getElementById('clips-results-grid');
+  if (!container) return;
+  const section = document.getElementById('clips-results-section');
+  if (section) section.style.display = clips.length ? 'block' : 'none';
+
+  container.innerHTML = clips.map(c => buildClipCard(c)).join('');
+}
+
+function buildClipCard(c) {
+  const id = c.id || c.filename?.replace('.mp4','') || 'clip';
+  const filename = c.filename || (id + '.mp4');
+  const score = c.score ? `<span style="background:#fbbf24;color:#000;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;">${c.score}/10 🔥</span>` : '';
+  const dur = (c.start != null && c.end != null) ? `${Math.round(c.end - c.start)}s` : '';
+
+  return `<div class="clip-card" id="clip-card-${escapeHtml(id)}">
+    <div style="position:relative;aspect-ratio:9/16;background:#000;border-radius:8px 8px 0 0;overflow:hidden;">
+      <video src="/api/clips/file/${escapeHtml(filename)}" muted playsinline preload="none"
+        style="width:100%;height:100%;object-fit:cover;cursor:pointer;"
+        onmouseenter="this.play()" onmouseleave="this.pause();this.currentTime=0;">
+      </video>
+      <div style="position:absolute;top:8px;right:8px;">${score}</div>
+      ${dur ? `<div style="position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,0.7);color:#fff;padding:2px 6px;border-radius:4px;font-size:11px;">${dur}</div>` : ''}
+    </div>
+    <div style="padding:12px;background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;">
+      <div style="font-weight:600;font-size:13px;margin-bottom:4px;">${escapeHtml(c.title || id)}</div>
+      ${c.reason ? `<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">${escapeHtml(c.reason)}</div>` : ''}
+      ${c.transcript_excerpt ? `<div style="font-size:10px;color:var(--text-dim);font-style:italic;margin-bottom:8px;max-height:40px;overflow:hidden;">"${escapeHtml(c.transcript_excerpt.substring(0,120))}…"</div>` : ''}
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <a href="/api/clips/file/${escapeHtml(filename)}" download="${escapeHtml(filename)}"
+           style="padding:5px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text);text-decoration:none;cursor:pointer;">⬇ Download</a>
+        <button onclick="openClipQueueModal('${escapeHtml(id)}','${escapeHtml(c.title||id)}','${escapeHtml(c.reason||'')}')"
+           style="padding:5px 10px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:6px;font-size:11px;color:var(--accent);cursor:pointer;border:none;">📅 Queue</button>
+        <button onclick="deleteClip('${escapeHtml(id)}','${escapeHtml(filename)}')"
+           style="padding:5px 10px;background:transparent;border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text-dim);cursor:pointer;">🗑</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function loadClipsLibrary() {
+  const container = document.getElementById('clips-library-grid');
+  if (!container) return;
+  try {
+    const res = await fetch('/api/clips/', { credentials: 'include' });
+    const clips = await res.json();
+    if (!clips.length) {
+      container.innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:40px;">No clips yet. Generate some above!</p>';
+      return;
+    }
+    container.innerHTML = clips.map(c => buildClipCard(c)).join('');
+  } catch(e) {
+    container.innerHTML = '<p style="color:var(--text-dim);">Could not load clips library.</p>';
+  }
+}
+
+function openClipQueueModal(clipId, title, reason) {
+  document.getElementById('cqm-clip-id').value = clipId;
+  document.getElementById('cqm-caption').value = title + (reason ? '\n\n' + reason : '');
+  document.getElementById('clip-queue-modal').style.display = 'flex';
+  // Populate client select
+  populateCQMClients();
+}
+
+async function populateCQMClients() {
+  try {
+    const res = await fetch('/api/clients', { credentials: 'include' });
+    const clients = await res.json();
+    const sel = document.getElementById('cqm-client');
+    if (sel) sel.innerHTML = '<option value="">No client</option>' + clients.map(c =>
+      `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name||c.id)}</option>`
+    ).join('');
+  } catch(e) {}
+}
+
+function closeClipQueueModal() {
+  document.getElementById('clip-queue-modal').style.display = 'none';
+}
+
+async function submitClipQueue() {
+  const clipId = document.getElementById('cqm-clip-id').value;
+  const body = {
+    client_id: document.getElementById('cqm-client').value,
+    platform: document.getElementById('cqm-platform').value,
+    scheduled_at: document.getElementById('cqm-scheduled').value,
+    caption: document.getElementById('cqm-caption').value,
+  };
+  try {
+    const res = await fetch('/api/clips/' + clipId + '/queue', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    closeClipQueueModal();
+    alert('✅ Clip added to queue!');
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function deleteClip(clipId, filename) {
+  if (!confirm('Delete this clip?')) return;
+  try {
+    await fetch('/api/clips/' + clipId, { method: 'DELETE', credentials: 'include' });
+    const card = document.getElementById('clip-card-' + clipId);
+    if (card) card.remove();
+    loadClipsLibrary();
+  } catch(e) {
+    alert('Error deleting: ' + e.message);
+  }
+}
+
 </script>
+
+<!-- CLIPPINGS TAB PANEL -->
+<div id="tab-clippings" class="tab-panel">
+  <div style="max-width:1200px;margin:0 auto;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+      <div style="width:42px;height:42px;background:linear-gradient(135deg,#f59e0b,#ef4444);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;">✂️</div>
+      <div>
+        <h2 style="font-size:20px;font-weight:700;">Clippings</h2>
+        <p style="font-size:13px;color:var(--text-dim);">Upload a long video → AI finds best moments → cuts & captions Opus-style clips</p>
+      </div>
+    </div>
+
+    <!-- Upload Panel -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:24px;">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:16px;">1. Upload Video</h3>
+
+      <div id="clips-dropzone" style="border:2px dashed var(--border);border-radius:10px;padding:40px;text-align:center;cursor:pointer;transition:border-color 0.2s;"
+           onclick="document.getElementById('clips-file-input').click()">
+        <div style="font-size:32px;margin-bottom:8px;">🎬</div>
+        <div id="clips-dropzone-hint" style="color:var(--text-dim);font-size:13px;">Drag & drop video here, or click to browse</div>
+        <div id="clips-selected-file" style="margin-top:8px;color:var(--accent);font-size:12px;"></div>
+        <input type="file" id="clips-file-input" accept="video/*" style="display:none">
+      </div>
+
+      <div style="margin-top:12px;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:12px;color:var(--text-dim);">Or local path:</span>
+        <input type="text" id="clips-local-path" placeholder="/path/to/video.mp4"
+               style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 12px;color:var(--text);font-size:12px;">
+      </div>
+
+      <div style="margin-top:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <label style="font-size:12px;color:var(--text-dim);">Clips:</label>
+          <input type="range" id="clips-num" min="1" max="8" value="5"
+                 oninput="document.getElementById('clips-num-val').textContent=this.value"
+                 style="width:100px;">
+          <span id="clips-num-val" style="font-size:12px;font-weight:600;min-width:16px;">5</span>
+        </div>
+        <button id="clips-generate-btn" onclick="generateClips()"
+                style="padding:9px 24px;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
+          ✨ Generate Clips
+        </button>
+      </div>
+
+      <div id="clips-status" style="margin-top:12px;font-size:13px;display:none;"></div>
+    </div>
+
+    <!-- Generated Clips Panel -->
+    <div id="clips-results-section" style="display:none;margin-bottom:24px;">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:16px;">2. Generated Clips</h3>
+      <div id="clips-results-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;"></div>
+    </div>
+
+    <!-- Library Panel -->
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <h3 style="font-size:14px;font-weight:600;">3. Clips Library</h3>
+        <button onclick="loadClipsLibrary()" style="padding:5px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:pointer;color:var(--text);">↻ Refresh</button>
+      </div>
+      <div id="clips-library-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;">
+        <p style="color:var(--text-dim);">Loading…</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Clip Queue Modal -->
+<div id="clip-queue-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;width:420px;max-width:95vw;">
+    <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">Add Clip to Queue</h3>
+    <input type="hidden" id="cqm-clip-id">
+
+    <div style="margin-bottom:12px;">
+      <label style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;display:block;margin-bottom:5px;">Client</label>
+      <select id="cqm-client" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--text);font-size:13px;">
+        <option value="">No client</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <label style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;display:block;margin-bottom:5px;">Platform</label>
+      <select id="cqm-platform" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--text);font-size:13px;">
+        <option value="tiktok">TikTok</option>
+        <option value="instagram">Instagram</option>
+        <option value="youtube">YouTube Shorts</option>
+        <option value="x">X (Twitter)</option>
+        <option value="linkedin">LinkedIn</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <label style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;display:block;margin-bottom:5px;">Schedule</label>
+      <input type="datetime-local" id="cqm-scheduled" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--text);font-size:13px;">
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <label style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;display:block;margin-bottom:5px;">Caption</label>
+      <textarea id="cqm-caption" rows="4" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="closeClipQueueModal()" style="padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-size:13px;cursor:pointer;color:var(--text);">Cancel</button>
+      <button onclick="submitClipQueue()" style="padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">Add to Queue</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
