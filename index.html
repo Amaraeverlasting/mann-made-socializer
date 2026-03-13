@@ -1695,13 +1695,32 @@
       <!-- Larry sub-tabs -->
       <div style="display:flex;gap:4px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:0;">
         <button class="larry-tab active" onclick="switchLarryTab('generator', this)">Generate</button>
+        <button class="larry-tab" onclick="switchLarryTab('ad-templates', this)">Ad Templates</button>
+        <button class="larry-tab" onclick="switchLarryTab('brand-dna', this)">Brand DNA</button>
         <button class="larry-tab" onclick="switchLarryTab('performance', this)">What's Working</button>
         <button class="larry-tab" onclick="switchLarryTab('recommendations', this)">Recommendations</button>
         <button class="larry-tab" onclick="switchLarryTab('hooks', this)">Hook Library</button>
+        <button class="larry-tab" onclick="switchLarryTab('batch-schedule', this)">Batch Schedule</button>
       </div>
 
       <!-- AD GENERATOR -->
       <div id="larry-section-generator" class="larry-section">
+
+        <!-- Template quick-select strip -->
+        <div style="margin-bottom:20px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <label style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;">Template (optional)</label>
+            <button class="btn btn-ghost btn-sm" onclick="clearSelectedTemplate()">Clear</button>
+          </div>
+          <div id="larry-gen-templates" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+            <div style="color:var(--text-dim);font-size:13px;">Loading templates...</div>
+          </div>
+          <div id="larry-template-structure" style="display:none;margin-top:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;margin-bottom:4px;" id="larry-template-name-label"></div>
+            <pre style="font-size:12px;color:var(--text-dim);white-space:pre-wrap;margin:0;font-family:inherit;" id="larry-template-structure-text"></pre>
+          </div>
+        </div>
+
         <div style="display:grid;grid-template-columns:360px 1fr;gap:24px;align-items:start;">
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;">
             <h3 style="font-size:14px;font-weight:600;margin-bottom:16px;">The Brief</h3>
@@ -1740,6 +1759,28 @@
             <div id="larry-results" style="display:none;">
               <h3 style="font-size:14px;font-weight:600;margin-bottom:14px;">Generated Variations</h3>
               <div id="larry-variations" style="display:flex;flex-direction:column;gap:14px;"></div>
+              <!-- AI Image Generation -->
+              <div style="margin-top:20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+                <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">🖼️ Generate Image</h3>
+                <div style="margin-bottom:10px;">
+                  <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Image Prompt</label>
+                  <textarea id="larry-image-prompt" rows="2" placeholder="Describe the image to generate..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+                  <label style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;">Aspect Ratio:</label>
+                  <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;"><input type="radio" name="larry-ar" value="square"> Square 1:1</label>
+                  <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;"><input type="radio" name="larry-ar" value="portrait" checked> Portrait 9:16</label>
+                  <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;"><input type="radio" name="larry-ar" value="landscape"> Landscape 16:9</label>
+                </div>
+                <button class="btn btn-ghost" onclick="larryGenerateImage()" id="larry-img-btn">🎨 Generate Image</button>
+                <div id="larry-image-result" style="display:none;margin-top:14px;">
+                  <img id="larry-image-preview" src="" alt="Generated image" style="max-width:100%;border-radius:8px;border:1px solid var(--border);">
+                  <div style="display:flex;gap:8px;margin-top:10px;">
+                    <button class="btn btn-ghost btn-sm" onclick="larryAddImageToPost()">+ Add to Post</button>
+                    <button class="btn btn-ghost btn-sm" onclick="larryGenerateImage()">Regenerate</button>
+                  </div>
+                </div>
+              </div>
             </div>
             <div id="larry-results-empty" style="display:flex;align-items:center;justify-content:center;height:300px;color:var(--text-dim);font-size:14px;">
               Add a brief and hit Generate
@@ -1769,6 +1810,126 @@
           <button class="btn btn-ghost" onclick="loadHooks()">Refresh</button>
         </div>
         <div id="hook-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+
+      <!-- AD TEMPLATES -->
+      <div id="larry-section-ad-templates" class="larry-section" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 400px;gap:24px;align-items:start;">
+          <div>
+            <h3 style="font-size:15px;font-weight:700;margin-bottom:4px;">Ad Format Templates</h3>
+            <p style="font-size:13px;color:var(--text-dim);margin-bottom:20px;">Pick a proven format, select a platform and client, then generate a filled post.</p>
+            <div id="larry-templates-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;"></div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;">
+            <h3 style="font-size:14px;font-weight:600;margin-bottom:16px;">Generate from Template</h3>
+            <div id="larry-tmpl-selected-info" style="display:none;margin-bottom:14px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:8px;padding:10px 12px;">
+              <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;margin-bottom:4px;" id="larry-tmpl-sel-name"></div>
+              <pre style="font-size:12px;color:var(--text-dim);white-space:pre-wrap;margin:0;font-family:inherit;" id="larry-tmpl-sel-structure"></pre>
+            </div>
+            <div style="margin-bottom:12px;">
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Client</label>
+              <select id="larry-tmpl-client" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:inherit;"></select>
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Platform</label>
+              <select id="larry-tmpl-platform" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:inherit;">
+                <option value="x">X (Twitter)</option>
+                <option value="linkedin">LinkedIn</option>
+                <option value="instagram">Instagram</option>
+                <option value="tiktok">TikTok</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" style="width:100%;" onclick="larryGenerateFromTemplate()" id="larry-tmpl-gen-btn">✨ Generate from Template</button>
+            <div id="larry-tmpl-result" style="display:none;margin-top:16px;">
+              <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;" id="larry-tmpl-result-label"></div>
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;">
+                <p style="font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;margin-bottom:10px;" id="larry-tmpl-result-text"></p>
+                <button class="btn btn-ghost btn-sm" onclick="addTemplateResultToQueue()">+ Add to Queue</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BRAND DNA -->
+      <div id="larry-section-brand-dna" class="larry-section" style="display:none;">
+        <div style="display:grid;grid-template-columns:360px 1fr;gap:24px;align-items:start;">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;">
+            <h3 style="font-size:14px;font-weight:600;margin-bottom:16px;">Analyse a Brand</h3>
+            <div style="margin-bottom:14px;">
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Client</label>
+              <select id="larry-dna-client" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:inherit;" onchange="loadExistingDNA()">
+                <option value="">Select client</option>
+              </select>
+            </div>
+            <div style="margin-bottom:20px;">
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Brand Website URL</label>
+              <input type="url" id="larry-dna-url" placeholder="https://example.com" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:inherit;">
+            </div>
+            <button class="btn btn-primary" style="width:100%;" onclick="larryAnalyseBrand()" id="larry-dna-btn">🔬 Analyse Brand</button>
+            <p style="font-size:11px;color:var(--text-dim);margin-top:10px;line-height:1.5;">Fetches the homepage, extracts brand signals, and builds a Brand DNA document using AI.</p>
+          </div>
+          <div>
+            <div id="larry-dna-empty" style="display:flex;align-items:center;justify-content:center;height:300px;color:var(--text-dim);font-size:14px;">Select a client or analyse a URL to build Brand DNA</div>
+            <div id="larry-dna-result" style="display:none;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                <h3 style="font-size:15px;font-weight:700;" id="larry-dna-brand-name">Brand DNA</h3>
+                <span style="font-size:11px;color:var(--green);background:rgba(34,197,94,0.1);padding:3px 10px;border-radius:12px;">Saved</span>
+              </div>
+              <div id="larry-dna-cards" style="display:flex;flex-direction:column;gap:14px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BATCH SCHEDULE -->
+      <div id="larry-section-batch-schedule" class="larry-section" style="display:none;">
+        <div style="display:grid;grid-template-columns:360px 1fr;gap:24px;align-items:start;">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;">
+            <h3 style="font-size:14px;font-weight:600;margin-bottom:16px;">Batch Schedule</h3>
+            <div style="margin-bottom:14px;">
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Client</label>
+              <select id="larry-batch-client" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:inherit;">
+                <option value="">Select client</option>
+              </select>
+            </div>
+            <div style="margin-bottom:14px;">
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Platforms</label>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;" id="larry-batch-platforms">
+                <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" value="x" checked onchange="updateBatchPreview()"> X</label>
+                <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" value="linkedin" checked onchange="updateBatchPreview()"> LinkedIn</label>
+                <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" value="instagram" onchange="updateBatchPreview()"> Instagram</label>
+                <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" value="tiktok" onchange="updateBatchPreview()"> TikTok</label>
+              </div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Days ahead: <span id="larry-batch-days-label">7</span></label>
+              <input type="range" id="larry-batch-days" min="1" max="14" value="7" style="width:100%;" oninput="document.getElementById('larry-batch-days-label').textContent=this.value; updateBatchPreview()">
+            </div>
+            <div style="margin-bottom:20px;">
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Posts per day per platform: <span id="larry-batch-ppd-label">2</span></label>
+              <input type="range" id="larry-batch-ppd" min="1" max="4" value="2" style="width:100%;" oninput="document.getElementById('larry-batch-ppd-label').textContent=this.value; updateBatchPreview()">
+            </div>
+            <div style="background:var(--accent-dim);border:1px solid var(--accent);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--accent);" id="larry-batch-preview-count">
+              Will generate <strong>28</strong> posts
+            </div>
+            <button class="btn btn-primary" style="width:100%;" onclick="larryBatchGenerate()" id="larry-batch-btn">📅 Generate and Schedule</button>
+          </div>
+          <div>
+            <div id="larry-batch-empty" style="display:flex;align-items:center;justify-content:center;height:300px;color:var(--text-dim);font-size:14px;">Configure and hit Generate to schedule posts in bulk</div>
+            <div id="larry-batch-result" style="display:none;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                <h3 style="font-size:15px;font-weight:700;" id="larry-batch-summary"></h3>
+              </div>
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+                <div style="display:grid;grid-template-columns:100px 1fr 160px;gap:0;padding:10px 14px;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;">
+                  <div>Platform</div><div>Preview</div><div>Scheduled</div>
+                </div>
+                <div id="larry-batch-table" style="max-height:500px;overflow-y:auto;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -2058,7 +2219,7 @@ function switchTab(tab, btn) {
   if (tab === 'approvals') { loadApprovals(); startApprovalsAutoRefresh(); } else { stopApprovalsAutoRefresh(); }
   if (tab === 'weekly') loadWeeklyCalendar();
   if (tab === 'hashtags') loadHashtagSets();
-  if (tab === 'larry') { populateLarryClients(); }
+  if (tab === 'larry') { populateLarryClients(); loadLarryTemplates(); }
   if (tab === 'clippings') { initClippingsTab(); }
 }
 
@@ -3719,12 +3880,16 @@ function switchLarryTab(section, btn) {
     b.style.color = 'var(--text-dim)';
     b.style.borderBottomColor = 'transparent';
   });
-  document.getElementById(`larry-section-${section}`).style.display = 'block';
+  const sectionEl = document.getElementById(`larry-section-${section}`);
+  if (sectionEl) sectionEl.style.display = 'block';
   btn.style.color = 'var(--accent)';
   btn.style.borderBottomColor = 'var(--accent)';
 
   if (section === 'performance' || section === 'recommendations') loadLarryInsights();
   if (section === 'hooks') loadHooks();
+  if (section === 'ad-templates') { loadLarryTemplates(); }
+  if (section === 'brand-dna') { loadExistingDNA(); }
+  if (section === 'batch-schedule') { updateBatchPreview(); }
 }
 
 async function loadLarryInsights() {
@@ -3898,7 +4063,322 @@ async function populateLarryClients() {
     sel.innerHTML = '<option value="">Any client</option>' + clients.map(c =>
       `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name||c.id)}</option>`
     ).join('');
+    // Also populate other Larry client dropdowns
+    const otherSelectors = ['#larry-dna-client','#larry-batch-client','#larry-tmpl-client'];
+    for (const sel2id of otherSelectors) {
+      const el = document.querySelector(sel2id);
+      if (el) el.innerHTML = '<option value="">Select client</option>' + clients.map(c =>
+        `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name||c.id)}</option>`
+      ).join('');
+    }
   } catch(e) {}
+}
+
+// ===== LARRY AD TEMPLATES (Feature 3) =====
+let larrySelectedTemplate = null;
+let larryTemplatesData = [];
+
+async function loadLarryTemplates() {
+  try {
+    const res = await fetch('/api/larry/templates', { credentials: 'include' });
+    larryTemplatesData = await res.json();
+    renderLarryTemplatesGrid();
+    renderLarryGenTemplates();
+  } catch(e) { console.error('Templates load error', e); }
+}
+
+function renderLarryGenTemplates() {
+  const container = document.getElementById('larry-gen-templates');
+  if (!container) return;
+  if (!larryTemplatesData.length) { container.innerHTML = '<div style="color:var(--text-dim);font-size:13px;">No templates found</div>'; return; }
+  container.innerHTML = larryTemplatesData.map(t => `
+    <div onclick="selectGenTemplate('${escapeHtml(t.id)}')" id="gen-tmpl-${escapeHtml(t.id)}"
+      style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;transition:all 0.15s;">
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px;">${escapeHtml(t.name)}</div>
+      <div style="font-size:11px;color:var(--text-dim);">${escapeHtml(t.description)}</div>
+    </div>`).join('');
+}
+
+function selectGenTemplate(id) {
+  const t = larryTemplatesData.find(x => x.id === id);
+  if (!t) return;
+  larrySelectedTemplate = t;
+  document.querySelectorAll('[id^="gen-tmpl-"]').forEach(el => {
+    el.style.borderColor = 'var(--border)';
+    el.style.background = 'var(--surface)';
+  });
+  const el = document.getElementById(`gen-tmpl-${id}`);
+  if (el) { el.style.borderColor = 'var(--accent)'; el.style.background = 'var(--accent-dim)'; }
+  const structEl = document.getElementById('larry-template-structure');
+  const nameEl = document.getElementById('larry-template-name-label');
+  const textEl = document.getElementById('larry-template-structure-text');
+  if (structEl && nameEl && textEl) {
+    structEl.style.display = 'block';
+    nameEl.textContent = t.name;
+    textEl.textContent = t.structure;
+  }
+}
+
+function clearSelectedTemplate() {
+  larrySelectedTemplate = null;
+  document.querySelectorAll('[id^="gen-tmpl-"]').forEach(el => {
+    el.style.borderColor = 'var(--border)';
+    el.style.background = 'var(--surface)';
+  });
+  const structEl = document.getElementById('larry-template-structure');
+  if (structEl) structEl.style.display = 'none';
+}
+
+function renderLarryTemplatesGrid() {
+  const container = document.getElementById('larry-templates-grid');
+  if (!container) return;
+  container.innerHTML = larryTemplatesData.map(t => `
+    <div onclick="selectAdTemplate('${escapeHtml(t.id)}')" id="ad-tmpl-${escapeHtml(t.id)}"
+      style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;cursor:pointer;transition:all 0.15s;">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">${escapeHtml(t.name)}</div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">${escapeHtml(t.description)}</div>
+      <pre style="font-size:11px;color:var(--text-dim);white-space:pre-wrap;font-family:inherit;opacity:0.7;margin:0;">${escapeHtml(t.structure)}</pre>
+    </div>`).join('');
+}
+
+function selectAdTemplate(id) {
+  const t = larryTemplatesData.find(x => x.id === id);
+  if (!t) return;
+  larrySelectedTemplate = t;
+  document.querySelectorAll('[id^="ad-tmpl-"]').forEach(el => {
+    el.style.borderColor = 'var(--border)';
+    el.style.background = 'var(--surface)';
+  });
+  const el = document.getElementById(`ad-tmpl-${id}`);
+  if (el) { el.style.borderColor = 'var(--accent)'; el.style.background = 'var(--accent-dim)'; }
+  const infoEl = document.getElementById('larry-tmpl-selected-info');
+  const nameEl = document.getElementById('larry-tmpl-sel-name');
+  const structEl = document.getElementById('larry-tmpl-sel-structure');
+  if (infoEl && nameEl && structEl) {
+    infoEl.style.display = 'block';
+    nameEl.textContent = t.name;
+    structEl.textContent = t.structure;
+  }
+}
+
+async function larryGenerateFromTemplate() {
+  if (!larrySelectedTemplate) { showToast('Select a template first', 'error'); return; }
+  const client_id = document.getElementById('larry-tmpl-client')?.value || '';
+  const platform = document.getElementById('larry-tmpl-platform')?.value || 'x';
+  const btn = document.getElementById('larry-tmpl-gen-btn');
+  btn.innerHTML = '<span class="spinner"></span> Generating...'; btn.disabled = true;
+  try {
+    const res = await fetch('/api/larry/generate-from-template', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ template_id: larrySelectedTemplate.id, client_id, platform })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const resultEl = document.getElementById('larry-tmpl-result');
+    const labelEl = document.getElementById('larry-tmpl-result-label');
+    const textEl = document.getElementById('larry-tmpl-result-text');
+    if (resultEl && labelEl && textEl) {
+      resultEl.style.display = 'block';
+      labelEl.textContent = `${larrySelectedTemplate.name} - ${platform}`;
+      textEl.textContent = data.content || '';
+    }
+    showToast('Generated!', 'success');
+  } catch(e) { showToast('Generation failed: ' + e.message, 'error'); }
+  finally { btn.innerHTML = '✨ Generate from Template'; btn.disabled = false; }
+}
+
+function addTemplateResultToQueue() {
+  const text = document.getElementById('larry-tmpl-result-text')?.textContent || '';
+  if (!text) return;
+  openNewPost();
+  setTimeout(() => {
+    const ta = document.getElementById('post-content');
+    if (ta) ta.value = text;
+  }, 100);
+  showToast('Content added to new post modal', 'success');
+}
+
+// ===== LARRY IMAGE GENERATION (Feature 2) =====
+let larryGeneratedImageUrl = null;
+
+async function larryGenerateImage() {
+  const prompt = document.getElementById('larry-image-prompt')?.value?.trim();
+  if (!prompt) { showToast('Enter an image prompt', 'error'); return; }
+  const aspect_ratio = document.querySelector('input[name="larry-ar"]:checked')?.value || 'portrait';
+  const client_id = document.getElementById('larry-client')?.value || '';
+  const btn = document.getElementById('larry-img-btn');
+  btn.innerHTML = '<span class="spinner"></span> Generating image...'; btn.disabled = true;
+  const resultEl = document.getElementById('larry-image-result');
+  if (resultEl) resultEl.style.display = 'none';
+  try {
+    const res = await fetch('/api/larry/generate-image', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, client_id, aspect_ratio })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    larryGeneratedImageUrl = data.image_url;
+    const img = document.getElementById('larry-image-preview');
+    if (img) img.src = data.image_url;
+    if (resultEl) resultEl.style.display = 'block';
+    showToast('Image generated!', 'success');
+  } catch(e) { showToast('Image generation failed: ' + e.message, 'error'); }
+  finally { btn.innerHTML = '🎨 Generate Image'; btn.disabled = false; }
+}
+
+function larryAddImageToPost() {
+  if (!larryGeneratedImageUrl) return;
+  openNewPost();
+  showToast('Post opened - attach image manually from: ' + larryGeneratedImageUrl, 'success');
+}
+
+// ===== LARRY BRAND DNA (Feature 1) =====
+
+async function loadExistingDNA() {
+  const client_id = document.getElementById('larry-dna-client')?.value;
+  if (!client_id) return;
+  try {
+    const res = await fetch(`/api/larry/brand-dna/${client_id}`, { credentials: 'include' });
+    if (res.status === 404) return;
+    if (!res.ok) return;
+    const data = await res.json();
+    renderBrandDNA(data);
+  } catch(e) {}
+}
+
+async function larryAnalyseBrand() {
+  const client_id = document.getElementById('larry-dna-client')?.value || '';
+  const url = document.getElementById('larry-dna-url')?.value?.trim();
+  if (!url) { showToast('Enter a URL', 'error'); return; }
+  const btn = document.getElementById('larry-dna-btn');
+  btn.innerHTML = '<span class="spinner"></span> Analysing...'; btn.disabled = true;
+  document.getElementById('larry-dna-empty').style.display = 'flex';
+  document.getElementById('larry-dna-result').style.display = 'none';
+  try {
+    const res = await fetch('/api/larry/brand-dna', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client_id, url })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    renderBrandDNA(data);
+    showToast('Brand DNA saved!', 'success');
+  } catch(e) { showToast('Analysis failed: ' + e.message, 'error'); }
+  finally { btn.innerHTML = '🔬 Analyse Brand'; btn.disabled = false; }
+}
+
+function renderBrandDNA(dna) {
+  document.getElementById('larry-dna-empty').style.display = 'none';
+  document.getElementById('larry-dna-result').style.display = 'block';
+  const nameEl = document.getElementById('larry-dna-brand-name');
+  if (nameEl) nameEl.textContent = dna.brand_name || 'Brand DNA';
+  const cards = document.getElementById('larry-dna-cards');
+  if (!cards) return;
+  const colorSwatches = (dna.visual_identity?.primary_colors || []).map(c =>
+    `<span style="display:inline-block;width:24px;height:24px;border-radius:4px;background:${escapeHtml(c)};border:1px solid var(--border);margin-right:4px;" title="${escapeHtml(c)}"></span>`
+  ).join('');
+  const toneChips = (dna.tone_of_voice || []).map(t =>
+    `<span style="background:var(--accent-dim);color:var(--accent);font-size:11px;padding:3px 10px;border-radius:12px;">${escapeHtml(t)}</span>`
+  ).join('');
+  const themeChips = (dna.content_themes || []).map(t =>
+    `<span style="background:var(--surface3);color:var(--text);font-size:11px;padding:3px 10px;border-radius:12px;">${escapeHtml(t)}</span>`
+  ).join('');
+  cards.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;">
+        <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Industry</div>
+        <div style="font-size:14px;color:var(--text);">${escapeHtml(dna.industry||'')}</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;">
+        <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Target Audience</div>
+        <div style="font-size:13px;color:var(--text);">${escapeHtml(dna.target_audience||'')}</div>
+      </div>
+    </div>
+    ${dna.tagline ? `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Tagline</div>
+      <div style="font-size:15px;font-style:italic;color:var(--text);">"${escapeHtml(dna.tagline)}"</div>
+    </div>` : ''}
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Tone of Voice</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">${toneChips}</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Key Messages</div>
+      ${(dna.key_messages||[]).map(m => `<div style="font-size:13px;color:var(--text);margin-bottom:6px;padding-left:10px;border-left:2px solid var(--accent);">${escapeHtml(m)}</div>`).join('')}
+    </div>
+    ${colorSwatches ? `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Visual Identity</div>
+      <div style="margin-bottom:8px;">${colorSwatches}</div>
+      <div style="font-size:12px;color:var(--text-dim);">${escapeHtml(dna.visual_identity?.style||'')}</div>
+    </div>` : ''}
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Content Themes</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">${themeChips}</div>
+    </div>
+    ${(dna.avoid||[]).length ? `<div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius);padding:14px;">
+      <div style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;margin-bottom:8px;">Avoid</div>
+      ${dna.avoid.map(a => `<div style="font-size:13px;color:var(--text);margin-bottom:4px;">- ${escapeHtml(a)}</div>`).join('')}
+    </div>` : ''}`;
+}
+
+// ===== LARRY BATCH SCHEDULE (Feature 4) =====
+
+function updateBatchPreview() {
+  const days = parseInt(document.getElementById('larry-batch-days')?.value || 7);
+  const ppd = parseInt(document.getElementById('larry-batch-ppd')?.value || 2);
+  const platforms = Array.from(document.querySelectorAll('#larry-batch-platforms input:checked')).length;
+  const total = days * ppd * platforms;
+  const el = document.getElementById('larry-batch-preview-count');
+  if (el) el.innerHTML = `Will generate <strong>${total}</strong> posts`;
+}
+
+async function larryBatchGenerate() {
+  const client_id = document.getElementById('larry-batch-client')?.value;
+  if (!client_id) { showToast('Select a client', 'error'); return; }
+  const platforms = Array.from(document.querySelectorAll('#larry-batch-platforms input:checked')).map(cb => cb.value);
+  if (!platforms.length) { showToast('Select at least one platform', 'error'); return; }
+  const days = parseInt(document.getElementById('larry-batch-days')?.value || 7);
+  const posts_per_day = parseInt(document.getElementById('larry-batch-ppd')?.value || 2);
+  const btn = document.getElementById('larry-batch-btn');
+  btn.innerHTML = '<span class="spinner"></span> Generating...'; btn.disabled = true;
+  document.getElementById('larry-batch-empty').style.display = 'flex';
+  document.getElementById('larry-batch-result').style.display = 'none';
+  try {
+    const res = await fetch('/api/larry/batch-generate', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client_id, platforms, days, posts_per_day })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    renderBatchResult(data);
+    showToast(`Scheduled ${data.total} posts!`, 'success');
+  } catch(e) { showToast('Batch generation failed: ' + e.message, 'error'); }
+  finally { btn.innerHTML = '📅 Generate and Schedule'; btn.disabled = false; }
+}
+
+function renderBatchResult(data) {
+  document.getElementById('larry-batch-empty').style.display = 'none';
+  document.getElementById('larry-batch-result').style.display = 'block';
+  const summaryEl = document.getElementById('larry-batch-summary');
+  if (summaryEl) {
+    const byPlatform = Object.entries(data.by_platform || {}).map(([p,n]) => `${p}: ${n}`).join(', ');
+    summaryEl.textContent = `${data.total} posts scheduled - ${byPlatform}`;
+  }
+  const tableEl = document.getElementById('larry-batch-table');
+  if (!tableEl) return;
+  const platIcons = {x:'𝕏',linkedin:'in',instagram:'ig',tiktok:'tt',facebook:'fb'};
+  tableEl.innerHTML = (data.posts || []).map(p => {
+    const dt = p.scheduled_at ? new Date(p.scheduled_at).toLocaleString('en-ZA', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+    return `<div style="display:grid;grid-template-columns:100px 1fr 160px;gap:0;padding:10px 14px;border-bottom:1px solid var(--border);align-items:center;">
+      <div style="font-size:12px;font-weight:600;color:var(--text);">${escapeHtml(platIcons[p.platform]||p.platform)} ${escapeHtml(p.platform)}</div>
+      <div style="font-size:12px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:10px;">${escapeHtml(p.content_preview||'')}</div>
+      <div style="font-size:12px;color:var(--text-dim);">${dt}</div>
+    </div>`;
+  }).join('');
 }
 
 

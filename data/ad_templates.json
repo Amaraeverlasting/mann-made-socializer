@@ -1,0 +1,10 @@
+[
+  {"id": "hook-headline", "name": "Hook Headline", "description": "Bold claim that stops the scroll", "structure": "HEADLINE\nBrief supporting context\nCTA"},
+  {"id": "us-vs-them", "name": "Us vs Them", "description": "Direct comparison highlighting your advantage", "structure": "Without [Brand]: [pain]\nWith [Brand]: [transformation]\nCTA"},
+  {"id": "testimonial", "name": "Testimonial", "description": "Real quote framing your value", "structure": "\"[Specific result quote]\"\n- Name, Title\n[Social proof line]\nCTA"},
+  {"id": "ugc-style", "name": "UGC Style", "description": "Authentic personal story format", "structure": "I [tried/discovered] [Brand] and [outcome].\n[Personal story]\n[Result with number]"},
+  {"id": "stat-callout", "name": "Stat Callout", "description": "Lead with a powerful number", "structure": "[NUMBER]% [stat]\n[What this means]\n[How Brand solves this]\nCTA"},
+  {"id": "problem-solution", "name": "Problem to Solution", "description": "Identify pain, present fix", "structure": "Still [doing painful thing]?\n[Agitate problem]\n[Brand] [solution]\n[Result]"},
+  {"id": "list-post", "name": "List Post", "description": "Numbered value list building authority", "structure": "[N] [topic] that [outcome]:\n1. Point\n2. Point\n3. Point\nSave this."},
+  {"id": "hot-take", "name": "Hot Take", "description": "Controversial opinion driving engagement", "structure": "Unpopular opinion: [bold claim]\n[Evidence]\n[Cost of alternative]\n[Your position]"}
+]

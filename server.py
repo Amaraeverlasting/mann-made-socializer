@@ -1767,6 +1767,417 @@ async def save_hook(request: Request):
 _load_hashtag_sets()
 
 
+# ===== LARRY BRAND DNA =====
+
+BRAND_DNA_DIR = BASE / "data" / "brand_dna"
+AD_TEMPLATES_FILE = BASE / "data" / "ad_templates.json"
+GENERATED_IMAGES_DIR = BASE / "data" / "generated_images"
+
+
+@app.post("/api/larry/brand-dna")
+async def larry_brand_dna(request: Request):
+    import httpx
+    body = await request.json()
+    client_id = body.get("client_id", "")
+    url = body.get("url", "")
+    if not url:
+        raise HTTPException(400, "url is required")
+
+    # Fetch URL content
+    try:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as hclient:
+            r = await hclient.get(url, headers={"User-Agent": "Mozilla/5.0 (compatible; MannMade/1.0)"})
+            html = r.text
+    except Exception as e:
+        raise HTTPException(400, f"Could not fetch URL: {e}")
+
+    # Extract visible text
+    text = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'<style[^>]*>.*?</style>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'<[^>]+>', ' ', text)
+    text = re.sub(r'\s+', ' ', text).strip()
+    text = text[:8000]
+
+    openai_key = os.environ.get("OPENAI_API_KEY", "")
+    if not openai_key:
+        raise HTTPException(503, "OPENAI_API_KEY not set")
+
+    system_prompt = """Analyse this brand's website content and extract a Brand DNA document in JSON format with these fields:
+{
+  "brand_name": "",
+  "tagline": "",
+  "industry": "",
+  "target_audience": "",
+  "tone_of_voice": ["adjective1", "adjective2", "adjective3"],
+  "key_messages": ["message1", "message2", "message3"],
+  "visual_identity": {
+    "primary_colors": ["#hex1", "#hex2"],
+    "style": "description of visual aesthetic",
+    "photography_style": "description"
+  },
+  "competitors": ["competitor1", "competitor2"],
+  "content_themes": ["theme1", "theme2", "theme3", "theme4"],
+  "avoid": ["things not to say or do for this brand"]
+}
+Return ONLY the JSON object, nothing else."""
+
+    try:
+        async with httpx.AsyncClient(timeout=30) as hclient:
+            resp = await hclient.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={"Authorization": f"Bearer {openai_key}", "Content-Type": "application/json"},
+                json={
+                    "model": "gpt-4o-mini",
+                    "max_tokens": 1000,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f"Website content:\n\n{text}"}
+                    ]
+                }
+            )
+            resp.raise_for_status()
+            content_text = resp.json()["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        raise HTTPException(500, f"OpenAI error: {e}")
+
+    try:
+        json_match = re.search(r'\{.*\}', content_text, re.DOTALL)
+        if not json_match:
+            raise ValueError("No JSON in response")
+        brand_dna = json.loads(json_match.group())
+    except Exception as e:
+        raise HTTPException(500, f"Failed to parse brand DNA: {e}")
+
+    BRAND_DNA_DIR.mkdir(parents=True, exist_ok=True)
+    if client_id:
+        (BRAND_DNA_DIR / f"{client_id}.json").write_text(json.dumps(brand_dna, indent=2))
+        try:
+            cfg = load_client(client_id)
+            cfg["brand_dna"] = brand_dna
+            save_client(cfg)
+        except Exception:
+            pass
+
+    return brand_dna
+
+
+@app.get("/api/larry/brand-dna/{client_id}")
+async def get_brand_dna(client_id: str):
+    f = BRAND_DNA_DIR / f"{client_id}.json"
+    if not f.exists():
+        raise HTTPException(404, "No brand DNA found for this client")
+    return json.loads(f.read_text())
+
+
+# ===== LARRY IMAGE GENERATION =====
+
+@app.post("/api/larry/generate-image")
+async def larry_generate_image(request: Request):
+    import httpx, base64
+    body = await request.json()
+    prompt = body.get("prompt", "")
+    aspect_ratio = body.get("aspect_ratio", "portrait")
+
+    if not prompt:
+        raise HTTPException(400, "prompt is required")
+
+    gemini_key = os.environ.get("GEMINI_API_KEY", "")
+    if not gemini_key:
+        raise HTTPException(503, "GEMINI_API_KEY not set")
+
+    ar_map = {"square": "1:1", "portrait": "9:16", "landscape": "16:9"}
+    ar = ar_map.get(aspect_ratio, "9:16")
+
+    try:
+        async with httpx.AsyncClient(timeout=60) as hclient:
+            resp = await hclient.post(
+                "https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict",
+                headers={"x-goog-api-key": gemini_key, "Content-Type": "application/json"},
+                json={
+                    "instances": [{"prompt": prompt}],
+                    "parameters": {"sampleCount": 1, "aspectRatio": ar}
+                }
+            )
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception as e:
+        raise HTTPException(500, f"Gemini API error: {e}")
+
+    try:
+        predictions = data.get("predictions", [])
+        if not predictions:
+            raise ValueError("No predictions returned")
+        img_b64 = predictions[0].get("bytesBase64Encoded", "")
+        if not img_b64:
+            raise ValueError("No image data in response")
+        img_bytes = base64.b64decode(img_b64)
+    except Exception as e:
+        raise HTTPException(500, f"Image decode error: {e}")
+
+    GENERATED_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+    filename = f"{uuid.uuid4()}.png"
+    (GENERATED_IMAGES_DIR / filename).write_bytes(img_bytes)
+
+    return {"image_url": f"/api/larry/image/{filename}", "filename": filename}
+
+
+@app.get("/api/larry/image/{filename}")
+async def serve_generated_image(filename: str):
+    safe = re.sub(r"[^a-zA-Z0-9._-]", "", filename)
+    path = GENERATED_IMAGES_DIR / safe
+    if not path.exists():
+        raise HTTPException(404, "Image not found")
+    return FileResponse(str(path), media_type="image/png")
+
+
+# ===== LARRY AD TEMPLATES =====
+
+@app.get("/api/larry/templates")
+async def get_larry_templates():
+    if AD_TEMPLATES_FILE.exists():
+        return json.loads(AD_TEMPLATES_FILE.read_text())
+    return []
+
+
+@app.post("/api/larry/generate-from-template")
+async def larry_generate_from_template(request: Request):
+    import httpx
+    body = await request.json()
+    template_id = body.get("template_id", "")
+    client_id = body.get("client_id", "")
+    platform = body.get("platform", "x")
+
+    if not template_id:
+        raise HTTPException(400, "template_id is required")
+
+    templates = json.loads(AD_TEMPLATES_FILE.read_text()) if AD_TEMPLATES_FILE.exists() else []
+    template = next((t for t in templates if t["id"] == template_id), None)
+    if not template:
+        raise HTTPException(404, "Template not found")
+
+    brand_dna = {}
+    if client_id:
+        dna_file = BRAND_DNA_DIR / f"{client_id}.json"
+        if dna_file.exists():
+            try:
+                brand_dna = json.loads(dna_file.read_text())
+            except Exception:
+                pass
+
+    openai_key = os.environ.get("OPENAI_API_KEY", "")
+    if not openai_key:
+        raise HTTPException(503, "OPENAI_API_KEY not set")
+
+    platform_rules = {
+        "x": "Max 280 chars. Hook-first. No filler.",
+        "linkedin": "150-300 words. Start with observation. Short paragraphs. End with question.",
+        "instagram": "2-5 sentences. Visual. 3-5 hashtags at end.",
+        "tiktok": "Max 3 sentences. Punchy hook."
+    }
+
+    brand_context = ""
+    if brand_dna:
+        brand_context = f"\n\nBrand: {brand_dna.get('brand_name', '')}\nTone: {', '.join(brand_dna.get('tone_of_voice', []))}\nKey messages: {', '.join(brand_dna.get('key_messages', []))}\nAvoid: {', '.join(brand_dna.get('avoid', []))}"
+
+    prompt = f"""Fill in this ad template for {platform}:
+
+Template: {template['name']}
+Structure:
+{template['structure']}
+
+Platform rules: {platform_rules.get(platform, 'Be concise and engaging.')}{brand_context}
+
+Return ONLY the filled post text, nothing else. Follow the structure but make it natural and human. No em dashes."""
+
+    try:
+        async with httpx.AsyncClient(timeout=30) as hclient:
+            resp = await hclient.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={"Authorization": f"Bearer {openai_key}", "Content-Type": "application/json"},
+                json={
+                    "model": "gpt-4o-mini",
+                    "max_tokens": 600,
+                    "messages": [
+                        {"role": "system", "content": "You are a social media copywriter. Write engaging, human-sounding content. No em dashes. No AI buzzwords like leverage, seamlessly, transformative, vibrant, delve, tapestry."},
+                        {"role": "user", "content": prompt}
+                    ]
+                }
+            )
+            resp.raise_for_status()
+            content_text = resp.json()["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        raise HTTPException(500, f"OpenAI error: {e}")
+
+    return {
+        "content": content_text,
+        "template": template,
+        "platform": platform,
+        "client_id": client_id
+    }
+
+
+# ===== LARRY BATCH SCHEDULING =====
+
+@app.post("/api/larry/batch-generate")
+async def larry_batch_generate(request: Request):
+    import httpx, sqlite3 as _sqlite3
+    body = await request.json()
+    client_id = body.get("client_id", "")
+    platforms = body.get("platforms", ["x", "linkedin"])
+    days = int(body.get("days", 7))
+    posts_per_day = int(body.get("posts_per_day", 2))
+
+    if not client_id:
+        raise HTTPException(400, "client_id is required")
+    if not platforms:
+        raise HTTPException(400, "platforms list is required")
+    if days < 1 or days > 14:
+        raise HTTPException(400, "days must be 1-14")
+    if posts_per_day < 1 or posts_per_day > 4:
+        raise HTTPException(400, "posts_per_day must be 1-4")
+
+    cfg = load_client(client_id)
+
+    openai_key = os.environ.get("OPENAI_API_KEY", "")
+    if not openai_key:
+        raise HTTPException(503, "OPENAI_API_KEY not set")
+
+    brand_dna = {}
+    dna_file = BRAND_DNA_DIR / f"{client_id}.json"
+    if dna_file.exists():
+        try:
+            brand_dna = json.loads(dna_file.read_text())
+        except Exception:
+            pass
+
+    platform_prompts = {
+        "x": "Write one punchy X (Twitter) post under 280 characters. Hook-first. Opinionated. No hashtag spam. No filler.",
+        "linkedin": "Write one LinkedIn post 150-250 words. Narrative style. Start with a specific observation, not 'I' or 'In today'. Professional but not stiff.",
+        "instagram": "Write an Instagram caption 2-5 sentences. Visual and specific. 3-5 relevant hashtags at end.",
+        "tiktok": "Write a TikTok caption under 3 sentences. Punchy hook first."
+    }
+
+    system_prompt = """You are writing social media posts for a brand. Rules:
+- No em dashes (use hyphens or commas instead)
+- No AI buzzwords: leverage, seamlessly, transformative, vibrant, delve, tapestry, robust, comprehensive, groundbreaking
+- No sycophancy, no 'exciting times', no corporate speak
+- Be specific with facts or numbers when possible
+- Sound human and direct
+Return ONLY the post text, nothing else."""
+
+    now = datetime.now()
+    generated_posts = []
+    by_platform = {p: 0 for p in platforms}
+
+    db_path = BASE / "data" / "socializer.db"
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = _sqlite3.connect(str(db_path))
+    conn.execute("""CREATE TABLE IF NOT EXISTS posts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, client TEXT, platform TEXT,
+        content TEXT, status TEXT, postiz_id TEXT, error TEXT,
+        created_at TEXT, posted_at TEXT, scheduled_at TEXT)""")
+    try:
+        conn.execute("ALTER TABLE posts ADD COLUMN scheduled_at TEXT")
+    except Exception:
+        pass
+    conn.commit()
+
+    postiz_api_key = _postiz_api_key()
+    postiz_base = _postiz_base_url()
+
+    async with httpx.AsyncClient(timeout=30) as hclient:
+        for day_offset in range(days):
+            target_date = now + timedelta(days=day_offset + 1)
+
+            for platform in platforms:
+                platform_cfg = cfg.get("platforms", {}).get(platform, {})
+                post_times = platform_cfg.get("post_times", ["09:00", "17:00"])
+                postiz_integration_id = platform_cfg.get("postiz_integration_id", "")
+
+                # Select times for this day (spread to posts_per_day)
+                selected_times = post_times[:posts_per_day]
+                while len(selected_times) < posts_per_day:
+                    hour = 9 + len(selected_times) * (8 // max(posts_per_day, 1))
+                    selected_times.append(f"{hour % 24:02d}:00")
+
+                for i, time_str in enumerate(selected_times[:posts_per_day]):
+                    try:
+                        h, m = map(int, time_str.split(":"))
+                    except Exception:
+                        h, m = 9, 0
+
+                    scheduled_dt = target_date.replace(hour=h, minute=m, second=0, microsecond=0)
+                    scheduled_iso = scheduled_dt.isoformat()
+
+                    brand_context = ""
+                    if brand_dna:
+                        brand_context = f"\n\nBrand: {brand_dna.get('brand_name', client_id)}\nTone: {', '.join(brand_dna.get('tone_of_voice', []))}\nThemes: {', '.join(brand_dna.get('content_themes', []))}"
+
+                    slot = "morning" if h < 12 else ("afternoon" if h < 17 else "evening")
+                    user_msg = f"{platform_prompts.get(platform, 'Write a social post.')}{brand_context}\n\nPost {i + 1} of {posts_per_day} for {target_date.strftime('%A %B %d')} at {time_str} ({slot}). Make it fresh."
+
+                    try:
+                        resp = await hclient.post(
+                            "https://api.openai.com/v1/chat/completions",
+                            headers={"Authorization": f"Bearer {openai_key}", "Content-Type": "application/json"},
+                            json={
+                                "model": "gpt-4o-mini",
+                                "max_tokens": 500,
+                                "messages": [
+                                    {"role": "system", "content": system_prompt},
+                                    {"role": "user", "content": user_msg}
+                                ]
+                            }
+                        )
+                        resp.raise_for_status()
+                        content_text = resp.json()["choices"][0]["message"]["content"].strip()
+                    except Exception as e:
+                        content_text = f"[Generation failed: {e}]"
+
+                    postiz_id = None
+                    status = "scheduled"
+                    if postiz_integration_id and postiz_api_key:
+                        try:
+                            postiz_headers = {"Authorization": f"Bearer {postiz_api_key}", "Content-Type": "application/json"}
+                            pr = await hclient.post(
+                                f"{postiz_base}/api/posts",
+                                headers=postiz_headers,
+                                json={
+                                    "content": content_text,
+                                    "integrations": [postiz_integration_id],
+                                    "scheduleDate": scheduled_iso
+                                }
+                            )
+                            pr.raise_for_status()
+                            pr_data = pr.json()
+                            postiz_id = str(pr_data.get("id", ""))
+                        except Exception:
+                            pass
+
+                    conn.execute(
+                        "INSERT INTO posts (client,platform,content,status,postiz_id,created_at,scheduled_at) VALUES (?,?,?,?,?,?,?)",
+                        (client_id, platform, content_text, status, postiz_id,
+                         datetime.utcnow().isoformat(), scheduled_iso)
+                    )
+                    conn.commit()
+
+                    generated_posts.append({
+                        "platform": platform,
+                        "content_preview": content_text[:60],
+                        "scheduled_at": scheduled_iso,
+                        "postiz_id": postiz_id
+                    })
+                    by_platform[platform] = by_platform.get(platform, 0) + 1
+
+    conn.close()
+
+    return {
+        "total": len(generated_posts),
+        "by_platform": by_platform,
+        "posts": generated_posts
+    }
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # CLIPPINGS — AI video clip generation
 # ═══════════════════════════════════════════════════════════════════════════════

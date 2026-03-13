@@ -81,9 +81,9 @@ def publish_to_postiz(content: str, integration_id: str) -> dict:
         json={
             "type": "now",
             "date": datetime.now(timezone.utc).isoformat(),
-            "shortLinkEnabled": False,
+            "shortLink": False,
             "tags": [],
-            "posts": [{"integration": {"id": integration_id}, "value": [{"content": content}], "settings": {}}]
+            "posts": [{"integration": {"id": integration_id}, "value": [{"content": content, "image": []}], "settings": {"who_can_reply_post": "everyone"}}]
         },
         timeout=30
     )
@@ -144,7 +144,8 @@ def main():
     try:
         result = publish_to_postiz(content, integration_id)
         print(f"[OK] Published. Response: {str(result)[:200]}")
-        log_to_db(args.client, args.platform, content, "published", str(result.get("id", "")))
+        post_id = result[0].get("postId", "") if isinstance(result, list) else str(result.get("id", ""))
+        log_to_db(args.client, args.platform, content, "published", post_id)
     except Exception as e:
         print(f"[ERROR] {e}")
         log_to_db(args.client, args.platform, content, "failed", error=str(e))
