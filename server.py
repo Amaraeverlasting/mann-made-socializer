@@ -469,7 +469,7 @@ async def generate_content(request: Request):
     if _anthropic_module is None:
         raise HTTPException(503, "anthropic package not installed. Run: pip3 install anthropic")
 
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    api_key = _get_anthropic_key()
     if not api_key:
         raise HTTPException(503, "ANTHROPIC_API_KEY not set")
 
@@ -1498,7 +1498,11 @@ def _get_anthropic_key() -> str:
             if path.exists():
                 try:
                     data = json.loads(path.read_text())
-                    key = data.get("anthropic", {}).get("apiKey", "")
+                    # Try root-level "anthropic" key first, then "providers.anthropic"
+                    key = (
+                        data.get("anthropic", {}).get("apiKey", "") or
+                        data.get("providers", {}).get("anthropic", {}).get("apiKey", "")
+                    )
                     if key:
                         break
                 except Exception:

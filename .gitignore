@@ -1,10 +1,9 @@
 # Sensitive client data
 clients/*.json
-!clients/new-client-template.json
+clients/*/queue.json
 
-# Auth / secrets
+# Auth and secrets
 data/users.json
-data/post_log.db
 secrets.json
 .env
 *.env
@@ -15,24 +14,30 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
+env/
 venv/
 .venv/
-env/
+*.egg-info/
 dist/
 build/
-*.egg-info/
 
 # Logs
 *.log
+logs/
 
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-Thumbs.db
+# Database files
+*.db
+*.sqlite
+*.sqlite3
 
-# Video uploads (large binary files)
+# Generated/temp files
+data/generated_images/
+data/clips/
 videos/inbox/
 
-# Session data
-browser-sessions/
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
